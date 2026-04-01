@@ -1,0 +1,36 @@
+# Crossplane Helm Values — LKE Platform Engineering Demo
+# Chart: crossplane-stable/crossplane
+# Repo: https://charts.crossplane.io/stable
+# Version: 1.18.1
+# Namespace: crossplane-system
+#
+# Managed as ArgoCD Application — see platform/apps/crossplane.yaml
+
+replicas: 1
+
+rbac:
+  create: true
+
+# Enable useful alpha/beta features for demo
+args:
+  - --enable-realtime-compositions
+  - --enable-usages
+
+resourcesCrossplane:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+resourcesRBACManager:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+metrics:
+  enabled: false

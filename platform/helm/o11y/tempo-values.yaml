@@ -1,0 +1,58 @@
+# Tempo Helm Values — LKE Platform Engineering Demo
+# Chart: grafana/tempo v1.24.4 (Tempo 2.9.0)
+# Repo: https://grafana.github.io/helm-charts
+# Namespace: o11y
+#
+# Managed as ArgoCD Application — see platform/apps/o11y.yaml
+
+replicas: 1
+
+tempo:
+  repository: grafana/tempo
+  tag: "2.9.0"
+  pullPolicy: IfNotPresent
+
+  updateStrategy: RollingUpdate
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+  # Disable multitenancy for demo
+  multitenancyEnabled: false
+
+  metricsGenerator:
+    enabled: true
+    remoteWriteUrl: "" # Set to Prometheus remote_write URL if available
+
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /var/tempo/traces
+      wal:
+        path: /var/tempo/wal
+
+  retention: 168h # 7 days
+
+  overrides:
+    defaults:
+      metrics_generator:
+        processors:
+          - service-graphs
+          - span-metrics
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClassName: linode-block-storage-retain
+
+service:
+  type: ClusterIP
+
+serviceMonitor:
+  enabled: false

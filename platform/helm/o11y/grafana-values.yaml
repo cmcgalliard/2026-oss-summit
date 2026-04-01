@@ -1,0 +1,111 @@
+# Grafana Helm Values — LKE Platform Engineering Demo
+# Chart: grafana/grafana v10.5.15 (Grafana 12.3.1)
+# Repo: https://grafana.github.io/helm-charts
+# Namespace: o11y
+#
+# Managed as ArgoCD Application — see platform/apps/o11y.yaml
+
+replicas: 1
+
+# Demo credentials — change for production
+adminUser: admin
+adminPassword: "grafana-demo" # TODO: use a Secret in production
+
+persistence:
+  enabled: true
+  size: 5Gi
+  storageClassName: linode-block-storage-retain
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+service:
+  type: LoadBalancer
+  port: 80
+
+# Pre-configured datasources pointing to in-cluster Loki and Tempo
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki-gateway.o11y.svc.cluster.local
+        uid: loki
+        isDefault: false
+        editable: true
+        jsonData:
+          maxLines: 1000
+          derivedFields:
+            - datasourceUid: tempo
+              matcherRegex: "trace_id=(\\w+)"
+              name: TraceID
+              url: "$${__value.raw}"
+
+      - name: Tempo
+        type: tempo
+        access: proxy
+        url: http://tempo.o11y.svc.cluster.local:3100
+        uid: tempo
+        isDefault: false
+        editable: true
+        jsonData:
+          httpMethod: GET
+          tracesToLogs:
+            datasourceUid: loki
+            filterByTraceID: true
+            filterBySpanID: false
+            tags:
+              - key: service.name
+                value: service_name
+          nodeGraph:
+            enabled: true
+          lokiSearch:
+            datasourceUid: loki
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: default
+        orgId: 1
+        folder: Platform
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+dashboards:
+  default:
+    loki-logs:
+      gnetId: 13639
+      revision: 2
+      datasource: Loki
+    tempo-traces:
+      gnetId: 16561
+      revision: 1
+      datasource: Tempo
+
+plugins:
+  - grafana-piechart-panel
+
+env:
+  GF_FEATURE_TOGGLES_ENABLE: traceToMetrics
+  GF_EXPLORE_ENABLED: "true"
+
+grafana.ini:
+  analytics:
+    reporting_enabled: false
+    check_for_updates: false
+  log:
+    mode: console
+    level: info
+  auth.anonymous:
+    enabled: false

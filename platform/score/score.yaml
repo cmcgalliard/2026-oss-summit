@@ -1,0 +1,34 @@
+apiVersion: score.dev/v1b1
+metadata:
+  name: demo-app
+
+containers:
+  demo-app:
+    image:
+      name: nginx
+      tag: "1.27"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 80
+    readinessProbe:
+      httpGet:
+        path: /
+        port: 80
+
+service:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+
+resources:
+  dns:
+    type: dns

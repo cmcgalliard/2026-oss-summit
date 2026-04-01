@@ -1,0 +1,37 @@
+# KRO Helm Values — LKE Platform Engineering Demo
+# Chart: oci://registry.k8s.io/kro/charts/kro
+# Version: 0.9.0
+# Namespace: kro-system
+# Source: https://github.com/kubernetes-sigs/kro
+#
+# Managed as ArgoCD Application — see platform/apps/kro.yaml
+
+deployment:
+  replicaCount: 1
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Use aggregation mode for proper RBAC scoping
+rbac:
+  mode: aggregation
+
+config:
+  # Verbose logging for demo visibility
+  logLevel: info
+  # Do not allow kro to delete CRDs it manages
+  allowCRDDeletion: false
+
+metrics:
+  service:
+    create: true
+    type: ClusterIP
+    port: 8078
+  # Enable if you have Prometheus Operator deployed
+  serviceMonitor:
+    enabled: false
