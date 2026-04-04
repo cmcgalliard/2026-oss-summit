@@ -6,6 +6,7 @@ set -euo pipefail
 # Prerequisites: kubectl configured with kubeconfig.yaml, helm v3, OSS_LINODE_API_TOKEN set.
 
 : "${OSS_LINODE_API_TOKEN:?OSS_LINODE_API_TOKEN must be set}"
+: "${OSS_GITHUB_PAT:?OSS_GITHUB_PAT must be set (GitHub Personal Access Token for private repo access)}"
 
 echo "==> Adding Helm repos"
 helm repo add argo https://argoproj.github.io/argo-helm
@@ -41,6 +42,17 @@ kubectl create secret generic grafana-admin-secret \
   --from-literal=admin-user=admin \
   --from-literal=admin-password="${GRAFANA_PASSWORD}" \
   --dry-run=client -o yaml | kubectl apply -f -
+
+echo "==> Registering GitHub repo credentials with ArgoCD (PAT)"
+kubectl create secret generic argocd-repo-github \
+  --namespace argocd \
+  --from-literal=type=git \
+  --from-literal=url=https://github.com/cmcgalliard/2026-oss-summit.git \
+  --from-literal=username=git \
+  --from-literal=password="${OSS_GITHUB_PAT}" \
+  --dry-run=client -o yaml \
+  | kubectl label --local -f - argocd.argoproj.io/secret-type=repository -o yaml \
+  | kubectl apply -f -
 
 echo "==> Applying App of Apps (ArgoCD will manage all platform apps)"
 kubectl apply -f platform/bootstrap/app-of-apps.yaml

@@ -32,7 +32,10 @@ configs:
     # Allow ArgoCD to manage apps in any namespace
     application.namespaces: "*"
 
-  # Configure ArgoCD to use the current git repo
+  # Repository credentials are managed via a Kubernetes Secret created by bootstrap.sh.
+  # The secret 'argocd-repo-github' in the argocd namespace is labeled
+  # argocd.argoproj.io/secret-type=repository and contains the GitHub PAT.
+  # Nothing here — credentials must NOT be committed to git.
   repositories: {}
 
 server:
