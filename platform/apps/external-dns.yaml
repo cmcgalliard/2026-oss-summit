@@ -9,17 +9,44 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  sources:
-    - repoURL: https://kubernetes-sigs.github.io/external-dns/
-      chart: external-dns
-      targetRevision: "1.19.0"
-      helm:
-        releaseName: external-dns
-        valueFiles:
-          - $values/platform/helm/external-dns/values.yaml
-    - repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
-      targetRevision: try-two
-      ref: values
+  source:
+    repoURL: https://kubernetes-sigs.github.io/external-dns/
+    chart: external-dns
+    targetRevision: "1.19.0"
+    helm:
+      releaseName: external-dns
+      valuesObject:
+        provider:
+          name: linode
+        env:
+          - name: LINODE_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: linode-token
+                key: token
+        sources:
+          - service
+          - ingress
+        domainFilters:
+          - ossdemo.soupcan.io
+        policy: upsert-only
+        interval: 1m
+        registry: txt
+        txtOwnerId: lke-oss-summit
+        rbac:
+          create: true
+        serviceAccount:
+          create: true
+          name: external-dns
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        logLevel: info
+        logFormat: text
   destination:
     server: https://kubernetes.default.svc
     namespace: external-dns

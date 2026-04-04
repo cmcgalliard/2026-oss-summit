@@ -9,17 +9,34 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  sources:
-    - repoURL: registry.k8s.io/kro/charts
-      chart: kro
-      targetRevision: "0.9.0"
-      helm:
-        releaseName: kro
-        valueFiles:
-          - $values/platform/helm/kro/values.yaml
-    - repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
-      targetRevision: try-two
-      ref: values
+  source:
+    repoURL: registry.k8s.io/kro/charts
+    chart: kro
+    targetRevision: "0.9.0"
+    helm:
+      releaseName: kro
+      valuesObject:
+        deployment:
+          replicaCount: 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+        rbac:
+          mode: aggregation
+        config:
+          logLevel: info
+          allowCRDDeletion: false
+        metrics:
+          service:
+            create: true
+            type: ClusterIP
+            port: 8078
+          serviceMonitor:
+            enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: kro-system

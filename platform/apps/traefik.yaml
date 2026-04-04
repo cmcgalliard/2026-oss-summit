@@ -9,17 +9,57 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  sources:
-    - repoURL: https://traefik.github.io/charts
-      chart: traefik
-      targetRevision: "39.0.7"
-      helm:
-        releaseName: traefik
-        valueFiles:
-          - $values/platform/helm/traefik/values.yaml
-    - repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
-      targetRevision: try-two
-      ref: values
+  source:
+    repoURL: https://traefik.github.io/charts
+    chart: traefik
+    targetRevision: "39.0.7"
+    helm:
+      releaseName: traefik
+      valuesObject:
+        service:
+          enabled: true
+          single: true
+          type: LoadBalancer
+        ingressClass:
+          enabled: true
+          isDefaultClass: true
+          name: traefik
+        ports:
+          web:
+            port: 8000
+            expose:
+              default: true
+            exposedPort: 80
+            protocol: TCP
+          websecure:
+            port: 8443
+            expose:
+              default: true
+            exposedPort: 443
+            protocol: TCP
+            tls:
+              enabled: true
+        providers:
+          kubernetesCRD:
+            enabled: true
+            allowCrossNamespace: false
+            allowExternalNameServices: false
+          kubernetesIngress:
+            enabled: true
+            publishedService:
+              enabled: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        logs:
+          general:
+            level: INFO
+          access:
+            enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: traefik
