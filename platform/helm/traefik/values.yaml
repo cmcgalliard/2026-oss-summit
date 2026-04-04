@@ -1,0 +1,56 @@
+# Traefik Helm Values — LKE Platform Engineering Demo
+# Chart: traefik/traefik v39.0.7 (Traefik Proxy v3.6.12)
+# Repo: https://traefik.github.io/charts
+# Namespace: traefik
+#
+# Managed as ArgoCD Application — see platform/apps/traefik.yaml
+
+service:
+  enabled: true
+  single: true
+  type: LoadBalancer
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+  name: traefik
+
+ports:
+  web:
+    port: 8000
+    expose:
+      default: true
+    exposedPort: 80
+    protocol: TCP
+  websecure:
+    port: 8443
+    expose:
+      default: true
+    exposedPort: 443
+    protocol: TCP
+    tls:
+      enabled: true
+
+providers:
+  kubernetesCRD:
+    enabled: true
+    allowCrossNamespace: false
+    allowExternalNameServices: false
+  kubernetesIngress:
+    enabled: true
+    publishedService:
+      enabled: true
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+logs:
+  general:
+    level: INFO
+  access:
+    enabled: true

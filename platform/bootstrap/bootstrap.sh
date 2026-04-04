@@ -19,27 +19,42 @@ helm upgrade --install argocd argo/argo-cd \
   --values platform/bootstrap/argocd/values.yaml \
   --wait
 
-echo "==> Creating Linode credentials secret"
+echo "==> Creating Linode credentials secret (Crossplane)"
 kubectl create namespace crossplane-system --dry-run=client -o yaml | kubectl apply -f -
 kubectl create secret generic linode-credentials \
   --namespace crossplane-system \
   --from-literal=credentials="{\"token\":\"${OSS_LINODE_API_TOKEN}\"}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
-echo "==> Applying ArgoCD Applications"
-kubectl apply -f platform/apps/crossplane.yaml
-kubectl apply -f platform/apps/crossplane-providers.yaml
-kubectl apply -f platform/apps/o11y.yaml
-kubectl apply -f platform/apps/kro.yaml
-kubectl apply -f platform/apps/score.yaml
+echo "==> Creating Linode token secret (external-dns)"
+kubectl create namespace external-dns --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret generic linode-token \
+  --namespace external-dns \
+  --from-literal=token="${OSS_LINODE_API_TOKEN}" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+echo "==> Creating Grafana admin secret (random password)"
+kubectl create namespace o11y --dry-run=client -o yaml | kubectl apply -f -
+GRAFANA_PASSWORD=$(openssl rand -base64 32 | tr -d '=+/' | head -c 32)
+kubectl create secret generic grafana-admin-secret \
+  --namespace o11y \
+  --from-literal=admin-user=admin \
+  --from-literal=admin-password="${GRAFANA_PASSWORD}" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+echo "==> Applying App of Apps (ArgoCD will manage all platform apps)"
+kubectl apply -f platform/bootstrap/app-of-apps.yaml
 
 echo ""
 echo "Bootstrap complete. ArgoCD will now reconcile all platform services."
 echo ""
 ARGOCD_IP=$(kubectl get svc argocd-server -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "<pending>")
-echo "ArgoCD UI: http://${ARGOCD_IP}"
-echo "Username:  admin"
-echo "Password:  admin"
+echo "ArgoCD UI:  http://${ARGOCD_IP}"
+echo "Username:   admin"
+echo "Password:   $(kubectl get secret argocd-initial-admin-secret -n argocd \
+  -o jsonpath='{.data.password}' 2>/dev/null | base64 -d 2>/dev/null || echo '<run: kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath={.data.password} | base64 -d>')"
+echo ""
+echo "Grafana password: ${GRAFANA_PASSWORD}"
 echo ""
 echo "Monitor sync status:"
 echo "  kubectl get applications -A"

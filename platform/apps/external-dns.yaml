@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: score-workloads
+  name: external-dns
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "3"
@@ -9,13 +9,20 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  source:
-    repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
-    targetRevision: try-two
-    path: platform/score
+  sources:
+    - repoURL: https://kubernetes-sigs.github.io/external-dns/
+      chart: external-dns
+      targetRevision: "1.19.0"
+      helm:
+        releaseName: external-dns
+        valueFiles:
+          - $values/platform/helm/external-dns/values.yaml
+    - repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
+      targetRevision: try-two
+      ref: values
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: external-dns
   syncPolicy:
     automated:
       prune: true
@@ -23,8 +30,8 @@ spec:
     syncOptions:
       - CreateNamespace=true
     retry:
-      limit: 3
+      limit: 5
       backoff:
-        duration: 5s
+        duration: 10s
         factor: 2
         maxDuration: 3m

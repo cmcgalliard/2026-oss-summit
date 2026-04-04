@@ -1,0 +1,51 @@
+# external-dns Helm Values — LKE Platform Engineering Demo
+# Chart: external-dns/external-dns v1.19.0 (App v0.19.0)
+# Repo: https://kubernetes-sigs.github.io/external-dns/
+# Namespace: external-dns
+#
+# Managed as ArgoCD Application — see platform/apps/external-dns.yaml
+#
+# Requires: kubectl create secret generic linode-token \
+#   --namespace external-dns --from-literal=token=<LINODE_API_TOKEN>
+
+provider:
+  name: linode
+
+env:
+  - name: LINODE_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: linode-token
+        key: token
+
+sources:
+  - service
+  - ingress
+
+domainFilters:
+  - ossdemo.soupcan.io
+
+policy: upsert-only
+
+interval: 1m
+
+registry: txt
+txtOwnerId: lke-oss-summit
+
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
+  name: external-dns
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+logLevel: info
+logFormat: text

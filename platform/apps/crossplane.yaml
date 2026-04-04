@@ -9,14 +9,17 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  source:
-    repoURL: https://charts.crossplane.io/stable
-    chart: crossplane
-    targetRevision: "1.18.1"
-    helm:
-      releaseName: crossplane
-      valueFiles:
-        - $values/platform/helm/crossplane/values.yaml
+  sources:
+    - repoURL: https://charts.crossplane.io/stable
+      chart: crossplane
+      targetRevision: "1.18.1"
+      helm:
+        releaseName: crossplane
+        valueFiles:
+          - $values/platform/helm/crossplane/values.yaml
+    - repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
+      targetRevision: try-two
+      ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: crossplane-system

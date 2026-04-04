@@ -19,10 +19,12 @@ global:
 
 configs:
   secret:
-    # admin password: "admin" (demo only — change for production)
-    # To regenerate: htpasswd -nbBC 10 "" 'newpassword' | tr -d ':\n' | sed 's/$2y/$2a/'
-    argocdServerAdminPassword: "0SSSUMMIT2026"
-    argocdServerAdminPasswordMtime: "2026-04-01T02:00:58Z"
+    # Admin password is NOT set here — ArgoCD auto-generates a random password
+    # and stores it in the 'argocd-initial-admin-secret' Secret in the argocd namespace.
+    # Retrieve it after bootstrap with:
+    #   kubectl get secret argocd-initial-admin-secret -n argocd \
+    #     -o jsonpath='{.data.password}' | base64 -d && echo
+    {}
 
   params:
     # Disable TLS for demo (enable in production)

@@ -1,43 +1,47 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kro
+  name: cert-manager
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   sources:
-    - repoURL: registry.k8s.io/kro/charts
-      chart: kro
-      targetRevision: "0.9.0"
+    - repoURL: oci://quay.io/jetstack/charts
+      chart: cert-manager
+      targetRevision: v1.20.1
       helm:
-        releaseName: kro
+        releaseName: cert-manager
         valueFiles:
-          - $values/platform/helm/kro/values.yaml
+          - $values/platform/helm/cert-manager/values.yaml
     - repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
       targetRevision: try-two
       ref: values
   destination:
     server: https://kubernetes.default.svc
-    namespace: kro-system
+    namespace: cert-manager
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - Replace=true
+      - ServerSideApply=true
     retry:
-      limit: 3
+      limit: 5
       backoff:
         duration: 5s
         factor: 2
         maxDuration: 3m
   ignoreDifferences:
-    - group: apiextensions.k8s.io
-      kind: CustomResourceDefinition
-      jqPathExpressions:
-        - .spec.conversion.webhook.clientConfig.caBundle
+    - group: cert-manager.io
+      kind: Certificate
+      jsonPointers:
+        - /status
+    - group: cert-manager.io
+      kind: ClusterIssuer
+      jsonPointers:
+        - /status

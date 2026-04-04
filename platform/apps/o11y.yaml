@@ -19,7 +19,7 @@ spec:
         valueFiles:
           - $values/platform/helm/o11y/loki-values.yaml
     - repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
-      targetRevision: HEAD
+      targetRevision: try-two
       ref: values
   destination:
     server: https://kubernetes.default.svc
@@ -58,7 +58,7 @@ spec:
         valueFiles:
           - $values/platform/helm/o11y/tempo-values.yaml
     - repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
-      targetRevision: HEAD
+      targetRevision: try-two
       ref: values
   destination:
     server: https://kubernetes.default.svc
@@ -97,7 +97,7 @@ spec:
         valueFiles:
           - $values/platform/helm/o11y/grafana-values.yaml
     - repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
-      targetRevision: HEAD
+      targetRevision: try-two
       ref: values
   destination:
     server: https://kubernetes.default.svc

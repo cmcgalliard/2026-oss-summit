@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
-    targetRevision: HEAD
+    targetRevision: try-two
     path: platform/crossplane
   destination:
     server: https://kubernetes.default.svc

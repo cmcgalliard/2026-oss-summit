@@ -1,6 +1,6 @@
 # Services Reference
 **Project**: OSS Summit 2026 Platform Engineering Demo  
-**Last Updated**: 2026-04-01
+**Last Updated**: 2026-04-04
 
 ## ArgoCD
 - **Role**: GitOps controller — manages all platform services from this repo
@@ -10,8 +10,56 @@
 - **Namespace**: `argocd`
 - **Values**: `platform/bootstrap/argocd/values.yaml`
 - **Install**: Bootstrap via `platform/bootstrap/bootstrap.sh` (imperative, once)
-- **Access**: LoadBalancer IP, admin/admin (demo)
+- **Access**: LoadBalancer IP, admin / `argocd-initial-admin-secret`
 - **Sync Wave**: N/A (bootstrap)
+
+## cert-manager
+- **Role**: TLS certificate management via Let's Encrypt ACME
+- **Helm OCI**: `oci://quay.io/jetstack/charts`
+- **Chart**: `cert-manager`
+- **Version**: `v1.20.1`
+- **Namespace**: `cert-manager`
+- **Values**: `platform/helm/cert-manager/values.yaml`
+- **ArgoCD App**: `platform/apps/cert-manager.yaml`
+- **Sync Wave**: 1
+- **CRDs**: Installed via Helm (`crds.enabled: true`, `crds.keep: true`)
+
+## cert-manager ClusterIssuers
+- **Role**: ACME issuers for Let's Encrypt (staging + production)
+- **Manifests**: `platform/cert-manager/`
+  - `letsencrypt-staging.yaml` — ACME staging (rate-limit safe, use for testing)
+  - `letsencrypt-prod.yaml` — ACME production (real certs)
+- **ArgoCD App**: `platform/apps/cert-manager-issuers.yaml`
+- **Sync Wave**: 4 (after cert-manager + traefik are ready)
+- **HTTP01 solver**: via `ingressClassName: traefik`
+- **ACME email**: `cmcgalliard@gmail.com`
+
+## Traefik
+- **Role**: Ingress controller — routes external traffic to in-cluster services
+- **Helm Repo**: `https://traefik.github.io/charts`
+- **Chart**: `traefik`
+- **Version**: `39.0.7` (Traefik Proxy v3.6.12)
+- **Namespace**: `traefik`
+- **Values**: `platform/helm/traefik/values.yaml`
+- **ArgoCD App**: `platform/apps/traefik.yaml`
+- **Sync Wave**: 2
+- **Service**: LoadBalancer (LKE auto-provisions NodeBalancer)
+- **IngressClass**: `traefik` (default)
+
+## external-dns
+- **Role**: Automatic DNS record management for Services and Ingresses
+- **Helm Repo**: `https://kubernetes-sigs.github.io/external-dns/`
+- **Chart**: `external-dns`
+- **Version**: `1.19.0` (App v0.19.0)
+- **Namespace**: `external-dns`
+- **Values**: `platform/helm/external-dns/values.yaml`
+- **ArgoCD App**: `platform/apps/external-dns.yaml`
+- **Sync Wave**: 3
+- **Provider**: `linode`
+- **Domain filter**: `ossdemo.soupcan.io`
+- **Credentials**: `linode-token` Secret in `external-dns` namespace (key: `token`)
+- **Policy**: `upsert-only` (safe — never deletes DNS records)
+- **TXT owner**: `lke-oss-summit`
 
 ## Crossplane
 - **Role**: Kubernetes-native infrastructure provisioning (creates LKE clusters)
@@ -43,21 +91,17 @@
 - **Version**: `6.55.0` (Loki 3.6.7)
 - **Mode**: SingleBinary (monolithic, suitable for demo)
 - **Values**: `platform/helm/o11y/loki-values.yaml`
-- **Storage**: `linode-block-storage-retain`, 10Gi
-- **Retention**: 31 days
 
 ### Tempo (Traces)
 - **Chart**: `grafana/tempo`
 - **Version**: `1.24.4` (Tempo 2.9.0)
 - **Values**: `platform/helm/o11y/tempo-values.yaml`
-- **Storage**: `linode-block-storage-retain`, 10Gi
-- **Retention**: 7 days
 
 ### Grafana (UI)
 - **Chart**: `grafana/grafana`
 - **Version**: `10.5.15` (Grafana 12.3.1)
 - **Values**: `platform/helm/o11y/grafana-values.yaml`
-- **Access**: LoadBalancer, admin/grafana-demo (demo)
+- **Access**: LoadBalancer, admin / `grafana-admin-secret` (random, set during bootstrap)
 - **Datasources**: Loki + Tempo pre-configured with trace correlation
 
 ## KRO (Kubernetes Resource Orchestrator)
@@ -68,24 +112,19 @@
 - **Values**: `platform/helm/kro/values.yaml`
 - **ArgoCD App**: `platform/apps/kro.yaml`
 - **Sync Wave**: 3
-- **CRDs**: `resourcegraphdefinitions.kro.run`, `graphrevisions.internal.kro.run`
-- **Note**: Uses `Replace=true` syncOption for CRD updates
 
 ## Score.dev
 - **Role**: Platform-agnostic workload specification (developer abstraction layer)
 - **Type**: CLI translation layer — NOT an in-cluster operator
-- **CLI Image**: `ghcr.io/score-spec/score-k8s:latest` (v0.10.3)
-- **Pattern**: `score.yaml` (spec) → `score-k8s generate` → `manifests.yaml` (K8s)
-- **Files**:
-  - `platform/score/score.yaml` — Sample Score workload spec
-  - `platform/score/manifests.yaml` — Pre-generated K8s manifests (ArgoCD deploys these)
-- **ArgoCD App**: `platform/apps/score.yaml` (deploys `platform/score/manifests.yaml`)
+- **Files**: `platform/score/`
+- **ArgoCD App**: `platform/apps/score.yaml`
 - **Sync Wave**: 3
 
 ## Sync Wave Order
 ```
-Wave 0: [bootstrap] ArgoCD + linode-credentials Secret
-Wave 1: Crossplane core (CRDs install)
-Wave 2: Crossplane Linode Provider + ProviderConfig (needs wave 1 CRDs)
-Wave 3: KRO, Loki, Tempo, Grafana, Score (independent)
+Wave 0: [bootstrap] ArgoCD + linode-credentials + linode-token + grafana-admin-secret
+Wave 1: cert-manager (CRDs + controller), crossplane (CRDs)
+Wave 2: traefik (ingress), crossplane-providers (linode provider + config)
+Wave 3: kro, loki, tempo, grafana, external-dns, score
+Wave 4: cert-manager-issuers (letsencrypt-staging, letsencrypt-prod)
 ```
