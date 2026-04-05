@@ -10,7 +10,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
+    repoURL: git@github.com:cmcgalliard/2026-oss-summit.git
     targetRevision: try-two
     path: platform/cert-manager
   destination:
