@@ -21,7 +21,7 @@ platform/
 
 `platform/bootstrap/app-of-apps.yaml` only reconciles `platform/apps/`, so the live RGD lives under `platform/crd/` and is pulled in through `platform/apps/platform-crd.yaml`.
 
-`platform/crd/platformcluster-kro-rbac.yaml` aggregates the extra controller permissions KRO needs in `rbac.mode=aggregation` to watch `PlatformCluster` instances and manage the resources declared by the graph.
+`platform/crd/platformcluster-kro-rbac.yaml` and `platform/crd/platformcluster-kro-rbac-secrets.yaml` aggregate the extra controller permissions KRO needs in `rbac.mode=aggregation` to watch `PlatformCluster` instances and manage the resources declared by the graph.
 
 ## Sync Order
 
@@ -57,6 +57,8 @@ When enabled, the RGD creates Argo CD `Application` resources in the management 
 ## Examples
 
 Examples are intentionally not under `platform/crd/`, so Argo CD does not auto-create demo clusters during sync.
+
+`controlPlaneAcl.addresses.ipv4` and `controlPlaneAcl.addresses.ipv6` must be present in current examples. Use empty arrays when ACLs are disabled.
 
 - `platform/examples/dev-cluster.yaml`
 - `platform/examples/staging-cluster.yaml`
