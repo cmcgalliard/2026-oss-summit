@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: git@github.com:cmcgalliard/2026-oss-summit.git
-    targetRevision: try-two
+    targetRevision: try-three
     path: platform/apps
     directory:
       recurse: false

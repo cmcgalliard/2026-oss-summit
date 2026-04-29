@@ -104,7 +104,7 @@ kubectl get clusterissuers
 
 ## Notes
 
-- This repo currently points Argo CD at `git@github.com:cmcgalliard/2026-oss-summit.git` and branch `try-two` in several manifests.
+- This repo currently points Argo CD at `git@github.com:cmcgalliard/2026-oss-summit.git` and branch `try-three` in several manifests.
 - If you fork or rename the repository, update the repo URL and tracked revision in the bootstrap and Argo CD application manifests.
 - `build.md` and `.context/` contain additional architecture and service detail used to shape this setup.
 
