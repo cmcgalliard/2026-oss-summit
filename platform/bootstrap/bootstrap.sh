@@ -6,6 +6,12 @@ set -euo pipefail
 # Prerequisites: kubectl configured with kubeconfig.yaml, helm v3, OSS_LINODE_API_TOKEN set.
 
 : "${OSS_LINODE_API_TOKEN:?OSS_LINODE_API_TOKEN must be set}"
+: "${OSS_GITHUB_DEPLOY_KEY_PATH:?OSS_GITHUB_DEPLOY_KEY_PATH must point to the GitHub deploy key}"
+
+if [[ ! -f "${OSS_GITHUB_DEPLOY_KEY_PATH}" ]]; then
+  echo "Deploy key not found: ${OSS_GITHUB_DEPLOY_KEY_PATH}" >&2
+  exit 1
+fi
 
 echo "==> Adding Helm repos"
 helm repo add argo https://argoproj.github.io/argo-helm
@@ -47,7 +53,7 @@ kubectl create secret generic argocd-repo-github \
   --namespace argocd \
   --from-literal=type=git \
   --from-literal=url=git@github.com:cmcgalliard/2026-oss-summit.git \
-  --from-file=sshPrivateKey=./id_ed25519 \
+  --from-file=sshPrivateKey="${OSS_GITHUB_DEPLOY_KEY_PATH}" \
   --dry-run=client -o yaml \
   | kubectl label --local -f - argocd.argoproj.io/secret-type=repository -o yaml \
   | kubectl apply -f -

@@ -39,7 +39,7 @@ platform/
 - `helm` v3
 - `openssl`
 - `OSS_LINODE_API_TOKEN` exported in your shell
-- An SSH deploy key at `./id_ed25519` with access to this repository
+- `OSS_GITHUB_DEPLOY_KEY_PATH` exported in your shell, pointing to an SSH deploy key with access to this repository
 
 ## Bootstrap
 
@@ -47,6 +47,7 @@ Run the bootstrap script once against the base cluster:
 
 ```bash
 export OSS_LINODE_API_TOKEN="<your-token>"
+export OSS_GITHUB_DEPLOY_KEY_PATH="/path/to/id_ed25519"
 bash platform/bootstrap/bootstrap.sh
 ```
 
@@ -54,7 +55,7 @@ The bootstrap script:
 
 - installs Argo CD
 - creates the Linode and Grafana bootstrap secrets
-- registers the GitHub repo in Argo CD using `id_ed25519`
+- registers the GitHub repo in Argo CD using the SSH key at `OSS_GITHUB_DEPLOY_KEY_PATH`
 - applies `platform/bootstrap/app-of-apps.yaml`
 
 After that, Argo CD reconciles everything in `platform/apps/`.
