@@ -1,0 +1,442 @@
+apiVersion: kro.run/v1alpha1
+kind: ResourceGraphDefinition
+metadata:
+  name: platformcluster
+spec:
+  schema:
+    group: api.platform.example.com
+    apiVersion: v1
+    kind: PlatformCluster
+    spec:
+      clusterSpec:
+        clusterName: string | required=true
+        region: string | default="us-ord"
+        kubernetesVersion: string | default="1.35"
+        controlPlaneAcl:
+          enabled: boolean | default=false
+          addresses:
+            ipv4: "[]string"
+            ipv6: "[]string"
+        nodePool:
+          count: integer | default=3
+          type: string | default="g6-standard-6"
+        labels:
+          environment: string | default="dev"
+          team: string | required=true
+      components:
+        o11yStack:
+          enabled: boolean | default=false
+          loki: boolean | default=true
+          tempo: boolean | default=true
+          grafana: boolean | default=true
+          alloy: boolean | default=true
+        harbor:
+          enabled: boolean | default=false
+        headlamp:
+          enabled: boolean | default=false
+    status:
+      clusterStatus: ${lkeCluster.status.atProvider.status}
+      clusterEndpoint: ${lkeCluster.status.atProvider.apiEndpoints[0]}
+  resources:
+    - id: lkeCluster
+      template:
+        apiVersion: lke.linode.upbound.io/v1alpha1
+        kind: Cluster
+        metadata:
+          name: ${schema.spec.clusterSpec.clusterName}
+          labels:
+            environment: ${schema.spec.clusterSpec.labels.environment}
+            team: ${schema.spec.clusterSpec.labels.team}
+            managed-by: kro-platformcluster
+            platform-cluster-name: ${schema.spec.clusterSpec.clusterName}
+        spec:
+          forProvider:
+            label: ${schema.spec.clusterSpec.clusterName}
+            region: ${schema.spec.clusterSpec.region}
+            k8sVersion: ${schema.spec.clusterSpec.kubernetesVersion}
+            controlPlane:
+              - acl:
+                  - enabled: ${schema.spec.clusterSpec.controlPlaneAcl.enabled}
+                    addresses:
+                      - ipv4: ${schema.spec.clusterSpec.controlPlaneAcl.addresses.ipv4}
+                        ipv6: ${schema.spec.clusterSpec.controlPlaneAcl.addresses.ipv6}
+            tags:
+              - "environment:${schema.spec.clusterSpec.labels.environment}"
+              - "team:${schema.spec.clusterSpec.labels.team}"
+              - "managed-by:kro"
+            pool:
+              - type: ${schema.spec.clusterSpec.nodePool.type}
+                count: ${double(schema.spec.clusterSpec.nodePool.count)}
+          writeConnectionSecretToRef:
+            name: "${schema.spec.clusterSpec.clusterName}-kubeconfig"
+            namespace: argocd
+          providerConfigRef:
+            name: default
+      readyWhen:
+        - ${lkeCluster.status.atProvider.status == "ready"}
+
+    - id: nodePool
+      template:
+        apiVersion: lke.linode.upbound.io/v1alpha1
+        kind: NodePool
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-pool"
+          labels:
+            environment: ${schema.spec.clusterSpec.labels.environment}
+            team: ${schema.spec.clusterSpec.labels.team}
+            managed-by: kro-platformcluster
+            platform-cluster-name: ${schema.spec.clusterSpec.clusterName}
+        spec:
+          forProvider:
+            clusterIdSelector:
+              matchLabels:
+                managed-by: kro-platformcluster
+                platform-cluster-name: ${schema.spec.clusterSpec.clusterName}
+            nodeCount: ${double(schema.spec.clusterSpec.nodePool.count)}
+            type: ${schema.spec.clusterSpec.nodePool.type}
+          providerConfigRef:
+            name: default
+
+    - id: bootstrapSA
+      template:
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-argocd-bootstrap"
+          namespace: argocd
+
+    - id: bootstrapRole
+      template:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: Role
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-argocd-bootstrap"
+          namespace: argocd
+        rules:
+          - apiGroups: [""]
+            resources: ["secrets"]
+            verbs: ["get", "create", "update", "patch"]
+
+    - id: bootstrapRoleBinding
+      template:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-argocd-bootstrap"
+          namespace: argocd
+        subjects:
+          - kind: ServiceAccount
+            name: "${schema.spec.clusterSpec.clusterName}-argocd-bootstrap"
+            namespace: argocd
+        roleRef:
+          kind: Role
+          name: "${schema.spec.clusterSpec.clusterName}-argocd-bootstrap"
+          apiGroup: rbac.authorization.k8s.io
+
+    - id: argocdRegisterJob
+      readyWhen:
+        - ${argocdRegisterJob.status.succeeded == 1}
+      template:
+        apiVersion: batch/v1
+        kind: Job
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-argocd-register"
+          namespace: argocd
+          labels:
+            platform-cluster: ${schema.metadata.name}
+        spec:
+          backoffLimit: 5
+          template:
+            spec:
+              serviceAccountName: "${schema.spec.clusterSpec.clusterName}-argocd-bootstrap"
+              restartPolicy: OnFailure
+              containers:
+                - name: register
+                  image: bitnami/kubectl:latest
+                  env:
+                    - name: CLUSTER_NAME
+                      value: "${schema.spec.clusterSpec.clusterName}"
+                    - name: PLATFORM_CLUSTER_NAME
+                      value: "${schema.metadata.name}"
+                  command: ["/bin/bash", "-c"]
+                  args:
+                    - |
+                      set -e
+                      SECRET_NAME="$CLUSTER_NAME-kubeconfig"
+
+                      echo "Waiting for kubeconfig secret: $SECRET_NAME"
+                      until kubectl get secret "$SECRET_NAME" -n argocd > /dev/null 2>&1; do
+                        echo "  not found yet, retrying in 15s..."
+                        sleep 15
+                      done
+                      echo "Kubeconfig secret found, extracting credentials..."
+
+                      kubectl get secret "$SECRET_NAME" -n argocd \
+                        -o jsonpath='{.data.kubeconfig}' | base64 -d > /tmp/lke-kubeconfig
+
+                      SERVER=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                        -o jsonpath='{.clusters[0].cluster.server}')
+                      CA_DATA=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                        -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')
+
+                      TOKEN=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                        -o jsonpath='{.users[0].user.token}')
+                      CERT_DATA=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                        -o jsonpath='{.users[0].user.client-certificate-data}')
+                      KEY_DATA=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                        -o jsonpath='{.users[0].user.client-key-data}')
+
+                      if [ -n "$TOKEN" ]; then
+                        CONFIG="{\"bearerToken\":\"$TOKEN\",\"tlsClientConfig\":{\"insecure\":false,\"caData\":\"$CA_DATA\"}}"
+                      else
+                        CONFIG="{\"tlsClientConfig\":{\"insecure\":false,\"caData\":\"$CA_DATA\",\"certData\":\"$CERT_DATA\",\"keyData\":\"$KEY_DATA\"}}"
+                      fi
+
+                      echo "Registering $CLUSTER_NAME with ArgoCD at: $SERVER"
+
+                      kubectl apply -f - <<EOF
+                      apiVersion: v1
+                      kind: Secret
+                      metadata:
+                        name: $CLUSTER_NAME
+                        namespace: argocd
+                        labels:
+                          argocd.argoproj.io/secret-type: cluster
+                          platform-cluster: $PLATFORM_CLUSTER_NAME
+                      type: Opaque
+                      stringData:
+                        name: "$CLUSTER_NAME"
+                        server: "$SERVER"
+                        config: '$CONFIG'
+                      EOF
+
+                      echo "Cluster $CLUSTER_NAME registered with ArgoCD."
+                      rm -f /tmp/lke-kubeconfig
+
+    - id: lokiApp
+      includeWhen:
+        - ${schema.spec.components.o11yStack.enabled}
+        - ${schema.spec.components.o11yStack.loki}
+      template:
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-loki"
+          namespace: argocd
+          annotations:
+            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+          finalizers:
+            - resources-finalizer.argocd.argoproj.io
+          labels:
+            platform-cluster: ${schema.metadata.name}
+            component: o11y-stack
+        spec:
+          project: default
+          source:
+            repoURL: https://grafana.github.io/helm-charts
+            chart: loki
+            targetRevision: "6.16.0"
+            helm:
+              releaseName: loki
+          destination:
+            server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
+            namespace: monitoring
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+            syncOptions:
+              - CreateNamespace=true
+
+    - id: tempoApp
+      includeWhen:
+        - ${schema.spec.components.o11yStack.enabled}
+        - ${schema.spec.components.o11yStack.tempo}
+      template:
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-tempo"
+          namespace: argocd
+          annotations:
+            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+          finalizers:
+            - resources-finalizer.argocd.argoproj.io
+          labels:
+            platform-cluster: ${schema.metadata.name}
+            component: o11y-stack
+        spec:
+          project: default
+          source:
+            repoURL: https://grafana.github.io/helm-charts
+            chart: tempo
+            targetRevision: "1.10.0"
+            helm:
+              releaseName: tempo
+          destination:
+            server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
+            namespace: monitoring
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+            syncOptions:
+              - CreateNamespace=true
+
+    - id: grafanaApp
+      includeWhen:
+        - ${schema.spec.components.o11yStack.enabled}
+        - ${schema.spec.components.o11yStack.grafana}
+      template:
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-grafana"
+          namespace: argocd
+          annotations:
+            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+          finalizers:
+            - resources-finalizer.argocd.argoproj.io
+          labels:
+            platform-cluster: ${schema.metadata.name}
+            component: o11y-stack
+        spec:
+          project: default
+          source:
+            repoURL: https://grafana.github.io/helm-charts
+            chart: grafana
+            targetRevision: "8.6.2"
+            helm:
+              releaseName: grafana
+              values: |
+                adminPassword: admin123
+                datasources:
+                  datasources.yaml:
+                    apiVersion: 1
+                    datasources:
+                      - name: Loki
+                        type: loki
+                        url: http://loki:3100
+                        access: proxy
+                        isDefault: true
+                      - name: Tempo
+                        type: tempo
+                        url: http://tempo:3100
+                        access: proxy
+          destination:
+            server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
+            namespace: monitoring
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+            syncOptions:
+              - CreateNamespace=true
+
+    - id: alloyApp
+      includeWhen:
+        - ${schema.spec.components.o11yStack.enabled}
+        - ${schema.spec.components.o11yStack.alloy}
+      template:
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-alloy"
+          namespace: argocd
+          annotations:
+            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+          finalizers:
+            - resources-finalizer.argocd.argoproj.io
+          labels:
+            platform-cluster: ${schema.metadata.name}
+            component: o11y-stack
+        spec:
+          project: default
+          source:
+            repoURL: https://grafana.github.io/helm-charts
+            chart: alloy
+            targetRevision: "0.9.2"
+            helm:
+              releaseName: alloy
+          destination:
+            server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
+            namespace: monitoring
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+            syncOptions:
+              - CreateNamespace=true
+
+    - id: harborApp
+      includeWhen:
+        - ${schema.spec.components.harbor.enabled}
+      template:
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-harbor"
+          namespace: argocd
+          annotations:
+            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+          finalizers:
+            - resources-finalizer.argocd.argoproj.io
+          labels:
+            platform-cluster: ${schema.metadata.name}
+            component: platform
+        spec:
+          project: default
+          source:
+            repoURL: https://helm.goharbor.io
+            chart: harbor
+            targetRevision: "1.15.0"
+            helm:
+              releaseName: harbor
+              values: |
+                harborAdminPassword: Harbor12345
+          destination:
+            server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
+            namespace: harbor
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+            syncOptions:
+              - CreateNamespace=true
+
+    - id: headlampApp
+      includeWhen:
+        - ${schema.spec.components.headlamp.enabled}
+      template:
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-headlamp"
+          namespace: argocd
+          annotations:
+            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+          finalizers:
+            - resources-finalizer.argocd.argoproj.io
+          labels:
+            platform-cluster: ${schema.metadata.name}
+            component: platform
+        spec:
+          project: default
+          source:
+            repoURL: https://kubernetes-sigs.github.io/headlamp/
+            chart: headlamp
+            targetRevision: "0.40.1"
+            helm:
+              releaseName: headlamp
+              values: |
+                config:
+                  sessionTTL: null
+          destination:
+            server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
+            namespace: headlamp
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+            syncOptions:
+              - CreateNamespace=true

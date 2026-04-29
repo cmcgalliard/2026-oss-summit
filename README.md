@@ -7,6 +7,7 @@ GitOps-managed platform for an Akamai Cloud Linode Kubernetes Engine cluster. Th
 - Bootstraps Argo CD into a base LKE cluster
 - Uses an app-of-apps pattern to reconcile `platform/apps/`
 - Installs core platform services for ingress, DNS, TLS, observability, and infrastructure provisioning
+- Publishes a KRO-backed `PlatformCluster` API for provisioning additional LKE clusters
 - Keeps cluster configuration in git so changes are applied declaratively
 
 ## Platform Components
@@ -18,6 +19,7 @@ GitOps-managed platform for an Akamai Cloud Linode Kubernetes Engine cluster. Th
 - `Crossplane`: infrastructure provisioning, including Linode provider support
 - `Grafana`, `Loki`, `Tempo`: observability stack
 - `KRO`: Kubernetes Resource Orchestrator
+- `PlatformCluster`: KRO resource graph for self-service cluster provisioning
 - `Score`: example workload specification under `platform/score/`
 
 ## Repository Layout
@@ -27,7 +29,9 @@ platform/
   apps/         Argo CD Application manifests
   bootstrap/    One-time cluster bootstrap assets
   cert-manager/ ClusterIssuer manifests
+  crd/          Synced KRO ResourceGraphDefinitions
   crossplane/   Provider and provider config manifests
+  examples/     Manual-only PlatformCluster examples
   helm/         Helm values files by service
   score/        Example Score workload manifests
 ```
@@ -82,13 +86,31 @@ Wave 1: cert-manager, crossplane
 Wave 2: traefik, crossplane-providers
 Wave 3: kro, o11y, external-dns, score
 Wave 4: cert-manager-issuers
+Wave 5: platform-crd
 ```
+
+`platform-crd` syncs `platform/crd/platformcluster-rgd.yaml` into `kro-system` after KRO is already present.
+
+## PlatformCluster
+
+The app-of-apps bootstrap only watches `platform/apps/`, so the live `PlatformCluster` `ResourceGraphDefinition` is stored in `platform/crd/` and reconciled by `platform/apps/platform-crd.yaml`.
+
+Example `PlatformCluster` manifests live under `platform/examples/` and are applied manually so Argo CD does not auto-create demo clusters:
+
+```bash
+kubectl get application platform-crd -n argocd
+kubectl explain platformcluster
+kubectl apply -f platform/examples/dev-cluster.yaml
+```
+
+See `platform/README.md` for the schema, prerequisites, and usage flow.
 
 ## Day-2 Changes
 
 - Add or update Argo CD apps in `platform/apps/`
 - Tune chart configuration in `platform/helm/`
-- Update platform manifests in `platform/cert-manager/`, `platform/crossplane/`, or `platform/score/`
+- Update platform manifests in `platform/cert-manager/`, `platform/crossplane/`, `platform/crd/`, or `platform/score/`
+- Apply or update manual examples in `platform/examples/` when testing `PlatformCluster`
 - Commit and push changes so Argo CD can reconcile them
 
 ## Verification

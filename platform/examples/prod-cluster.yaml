@@ -1,0 +1,41 @@
+apiVersion: api.platform.example.com/v1
+kind: PlatformCluster
+metadata:
+  name: demo-prod-cluster
+  namespace: default
+  labels:
+    environment: prod
+    team: platform-team
+    sla: high-availability
+    backup: enabled
+spec:
+  clusterSpec:
+    clusterName: demo-prod-cluster
+    region: us-east
+    kubernetesVersion: "1.35"
+    controlPlaneAcl:
+      enabled: true
+      addresses:
+        ipv4:
+          - 10.0.0.0/8
+          - 203.0.113.0/24
+          - 192.0.2.0/29
+        ipv6:
+          - 2001:db8::/32
+    nodePool:
+      count: 5
+      type: g6-standard-6
+    labels:
+      environment: prod
+      team: platform-team
+  components:
+    o11yStack:
+      enabled: true
+      loki: true
+      tempo: true
+      grafana: true
+      alloy: true
+    harbor:
+      enabled: true
+    headlamp:
+      enabled: true
