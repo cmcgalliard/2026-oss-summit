@@ -161,7 +161,7 @@ spec:
                   command: ["/bin/bash", "-c"]
                   args:
                     - |
-                      set -e
+                      set -euo pipefail
                       SECRET_NAME="$CLUSTER_NAME-kubeconfig"
 
                       echo "Waiting for kubeconfig secret: $SECRET_NAME"
@@ -171,8 +171,23 @@ spec:
                       done
                       echo "Kubeconfig secret found, extracting credentials..."
 
-                      kubectl get secret "$SECRET_NAME" -n argocd \
-                        -o jsonpath='{.data.kubeconfig}' | base64 -d > /tmp/lke-kubeconfig
+                      KUBECONFIG_B64=$(kubectl get secret "$SECRET_NAME" -n argocd \
+                        -o go-template='{{index .data "kubeconfig"}}')
+
+                      # Upjet connection secrets commonly expose provider attributes
+                      # under attribute.<name> instead of the bare key.
+                      if [ -z "$KUBECONFIG_B64" ]; then
+                        KUBECONFIG_B64=$(kubectl get secret "$SECRET_NAME" -n argocd \
+                          -o go-template='{{index .data "attribute.kubeconfig"}}')
+                      fi
+
+                      if [ -z "$KUBECONFIG_B64" ]; then
+                        echo "kubeconfig data missing from secret $SECRET_NAME"
+                        kubectl get secret "$SECRET_NAME" -n argocd -o go-template='{{range $k, $_ := .data}}{{printf "%s\n" $k}}{{end}}'
+                        exit 1
+                      fi
+
+                      printf '%s' "$KUBECONFIG_B64" | base64 -d > /tmp/lke-kubeconfig
 
                       SERVER=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
                         -o jsonpath='{.clusters[0].cluster.server}')
@@ -185,6 +200,16 @@ spec:
                         -o jsonpath='{.users[0].user.client-certificate-data}')
                       KEY_DATA=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
                         -o jsonpath='{.users[0].user.client-key-data}')
+
+                      if [ -z "$SERVER" ]; then
+                        echo "cluster server missing from kubeconfig in secret $SECRET_NAME"
+                        exit 1
+                      fi
+
+                      if [ -z "$TOKEN" ] && { [ -z "$CERT_DATA" ] || [ -z "$KEY_DATA" ]; }; then
+                        echo "cluster auth data missing from kubeconfig in secret $SECRET_NAME"
+                        exit 1
+                      fi
 
                       if [ -n "$TOKEN" ]; then
                         CONFIG="{\"bearerToken\":\"$TOKEN\",\"tlsClientConfig\":{\"insecure\":false,\"caData\":\"$CA_DATA\"}}"
