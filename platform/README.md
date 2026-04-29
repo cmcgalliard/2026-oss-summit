@@ -21,6 +21,8 @@ platform/
 
 `platform/bootstrap/app-of-apps.yaml` only reconciles `platform/apps/`, so the live RGD lives under `platform/crd/` and is pulled in through `platform/apps/platform-crd.yaml`.
 
+`platform/crd/platformcluster-kro-rbac.yaml` aggregates the extra controller permissions KRO needs in `rbac.mode=aggregation` to watch `PlatformCluster` instances and manage the resources declared by the graph.
+
 ## Sync Order
 
 - Wave 3: `kro`
