@@ -44,9 +44,9 @@ metadata:
 spec:
   gatewayClassName: nginx
   listeners:
-    - name: http
+    - name: web
       protocol: HTTP
-      port: 80
+      port: 8000
 EOF
 
 (

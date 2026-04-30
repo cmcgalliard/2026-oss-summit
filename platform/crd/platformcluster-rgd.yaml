@@ -395,9 +395,9 @@ spec:
         spec:
           project: default
           source:
-            repoURL: https://github.com/nginx/nginx-gateway-fabric.git
-            targetRevision: v2.5.1
-            path: config/crd/gateway-api/standard
+            repoURL: https://github.com/kubernetes-sigs/gateway-api.git
+            targetRevision: v1.2.1
+            path: config/crd/standard
           destination:
             server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
             namespace: nginx-gateway
@@ -429,11 +429,27 @@ spec:
         spec:
           project: default
           source:
-            repoURL: https://github.com/nginx/nginx-gateway-fabric.git
-            targetRevision: v2.5.1
-            path: charts/nginx-gateway-fabric
+            repoURL: https://traefik.github.io/charts
+            chart: traefik
+            targetRevision: "39.0.7"
             helm:
-              releaseName: ngf
+              releaseName: traefik
+              valuesObject:
+                service:
+                  enabled: true
+                  single: true
+                  type: LoadBalancer
+                providers:
+                  kubernetesGateway:
+                    enabled: true
+                gatewayClass:
+                  enabled: true
+                  name: nginx
+                gateway:
+                  enabled: true
+                  name: traefik-gateway
+                ingressClass:
+                  enabled: false
           destination:
             server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
             namespace: nginx-gateway

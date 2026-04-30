@@ -106,7 +106,7 @@ Rules:
 - `gateway.yaml` creates a demo `Gateway` named `default` in the app namespace
 - app names are repo-global and reusable across clusters
 
-If a Score workload renders `HTTPRoute` resources, enable `spec.components.gatewayFabric.enabled` on the target `PlatformCluster` so the child cluster has Gateway API CRDs and the `nginx-gateway-fabric` controller.
+If a Score workload renders `HTTPRoute` resources, enable `spec.components.gatewayFabric.enabled` on the target `PlatformCluster` so the child cluster has Gateway API CRDs and a demo Traefik-based Gateway API controller.
 
 Helper scripts:
 
@@ -126,4 +126,4 @@ Delete flow:
 
 Set `spec.components.userApps.enabled` to the exact app names that should be deployed to the cluster.
 
-This flow deploys workloads onto an existing child cluster. For the demo path, it can also provision per-app `Gateway` resources when `gatewayFabric` is enabled on the target cluster. Shared ingress, DNS, and TLS policy remain out of scope.
+This flow deploys workloads onto an existing child cluster. For the demo path, it can also provision per-app `Gateway` resources when `gatewayFabric` is enabled on the target cluster. The current demo implementation uses Traefik as the Gateway API controller. Shared ingress, DNS, and TLS policy remain out of scope.

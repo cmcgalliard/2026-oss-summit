@@ -140,7 +140,7 @@ Prerequisites:
 - repo write access
 - an existing child cluster already registered in Argo CD by `PlatformCluster`
 - the target app name listed under `spec.components.userApps.enabled`
-- `spec.components.gatewayFabric.enabled: true` on any `PlatformCluster` that should run Score `HTTPRoute` resources
+- `spec.components.gatewayFabric.enabled: true` on any `PlatformCluster` that should run Score `HTTPRoute` resources through the demo Traefik Gateway API controller
 
 Create a new workload:
 
