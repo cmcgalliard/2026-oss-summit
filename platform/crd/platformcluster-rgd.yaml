@@ -122,6 +122,34 @@ spec:
           name: "${schema.spec.clusterSpec.clusterName}-argocd-bootstrap"
           apiGroup: rbac.authorization.k8s.io
 
+    - id: publishRole
+      template:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: Role
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-platformcluster-publish"
+          namespace: ${schema.metadata.namespace}
+        rules:
+          - apiGroups: [""]
+            resources: ["secrets"]
+            verbs: ["get", "create", "update", "patch"]
+
+    - id: publishRoleBinding
+      template:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-platformcluster-publish"
+          namespace: ${schema.metadata.namespace}
+        subjects:
+          - kind: ServiceAccount
+            name: "${schema.spec.clusterSpec.clusterName}-argocd-bootstrap"
+            namespace: argocd
+        roleRef:
+          kind: Role
+          name: "${schema.spec.clusterSpec.clusterName}-platformcluster-publish"
+          apiGroup: rbac.authorization.k8s.io
+
     - id: argocdRegisterJob
       readyWhen:
         - ${argocdRegisterJob.status.succeeded == 1}
@@ -445,6 +473,18 @@ spec:
               values: |
                 config:
                   sessionTTL: null
+                serviceAccount:
+                  create: true
+                  name: headlamp
+                extraManifests:
+                  - |
+                    apiVersion: v1
+                    kind: Secret
+                    metadata:
+                      name: headlamp-token
+                      annotations:
+                        kubernetes.io/service-account.name: headlamp
+                    type: kubernetes.io/service-account-token
                 service:
                   type: LoadBalancer
           destination:
@@ -456,3 +496,117 @@ spec:
               selfHeal: true
             syncOptions:
               - CreateNamespace=true
+
+    - id: headlampTokenJob
+      includeWhen:
+        - ${schema.spec.components.headlamp.enabled}
+      readyWhen:
+        - ${headlampTokenJob.status.succeeded == 1}
+      template:
+        apiVersion: batch/v1
+        kind: Job
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-headlamp-token"
+          namespace: argocd
+          labels:
+            platform-cluster: ${schema.metadata.name}
+          annotations:
+            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+        spec:
+          backoffLimit: 5
+          template:
+            spec:
+              serviceAccountName: "${schema.spec.clusterSpec.clusterName}-argocd-bootstrap"
+              restartPolicy: OnFailure
+              containers:
+                - name: publish-token
+                  image: bitnami/kubectl:latest
+                  env:
+                    - name: CLUSTER_NAME
+                      value: "${schema.spec.clusterSpec.clusterName}"
+                    - name: PLATFORM_CLUSTER_NAME
+                      value: "${schema.metadata.name}"
+                    - name: PLATFORM_CLUSTER_NAMESPACE
+                      value: "${schema.metadata.namespace}"
+                  command: ["/bin/bash", "-c"]
+                  args:
+                    - |
+                      set -euo pipefail
+                      SOURCE_SECRET_NAME="$CLUSTER_NAME-kubeconfig"
+                      PUBLISHED_SECRET_NAME="$CLUSTER_NAME-headlamp-token"
+                      HEADLAMP_NAMESPACE=headlamp
+                      HEADLAMP_SERVICE_ACCOUNT=headlamp
+                      HEADLAMP_TOKEN_SECRET=headlamp-token
+
+                      echo "Waiting for kubeconfig secret: $SOURCE_SECRET_NAME"
+                      until kubectl get secret "$SOURCE_SECRET_NAME" -n argocd > /dev/null 2>&1; do
+                        echo "  not found yet, retrying in 15s..."
+                        sleep 15
+                      done
+
+                      KUBECONFIG_B64=$(kubectl get secret "$SOURCE_SECRET_NAME" -n argocd \
+                        -o go-template='{{index .data "kubeconfig"}}')
+
+                      if [ -z "$KUBECONFIG_B64" ]; then
+                        KUBECONFIG_B64=$(kubectl get secret "$SOURCE_SECRET_NAME" -n argocd \
+                          -o go-template='{{index .data "attribute.kubeconfig"}}')
+                      fi
+
+                      if [ -z "$KUBECONFIG_B64" ]; then
+                        echo "kubeconfig data missing from secret $SOURCE_SECRET_NAME"
+                        exit 1
+                      fi
+
+                      printf '%s' "$KUBECONFIG_B64" | base64 -d > /tmp/lke-kubeconfig
+
+                      echo "Waiting for Headlamp service account in target cluster"
+                      until KUBECONFIG=/tmp/lke-kubeconfig kubectl get serviceaccount "$HEADLAMP_SERVICE_ACCOUNT" -n "$HEADLAMP_NAMESPACE" > /dev/null 2>&1; do
+                        echo "  service account not found yet, retrying in 15s..."
+                        sleep 15
+                      done
+
+                      echo "Ensuring Headlamp token secret exists in target cluster"
+                      KUBECONFIG=/tmp/lke-kubeconfig kubectl apply -f - <<EOF
+                      apiVersion: v1
+                      kind: Secret
+                      metadata:
+                        name: $HEADLAMP_TOKEN_SECRET
+                        namespace: $HEADLAMP_NAMESPACE
+                        annotations:
+                          kubernetes.io/service-account.name: $HEADLAMP_SERVICE_ACCOUNT
+                      type: kubernetes.io/service-account-token
+                      EOF
+
+                      echo "Waiting for token data to be populated"
+                      HEADLAMP_TOKEN=""
+                      until [ -n "$HEADLAMP_TOKEN" ]; do
+                        TOKEN_B64=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl get secret "$HEADLAMP_TOKEN_SECRET" -n "$HEADLAMP_NAMESPACE" \
+                          -o go-template='{{index .data "token"}}' 2> /dev/null || true)
+                        if [ -n "$TOKEN_B64" ]; then
+                          HEADLAMP_TOKEN=$(printf '%s' "$TOKEN_B64" | base64 -d)
+                        else
+                          echo "  token not populated yet, retrying in 15s..."
+                          sleep 15
+                        fi
+                      done
+
+                      kubectl apply -f - <<EOF
+                      apiVersion: v1
+                      kind: Secret
+                      metadata:
+                        name: $PUBLISHED_SECRET_NAME
+                        namespace: $PLATFORM_CLUSTER_NAMESPACE
+                        labels:
+                          platform-cluster: $PLATFORM_CLUSTER_NAME
+                          component: headlamp
+                      type: Opaque
+                      stringData:
+                        token: "$HEADLAMP_TOKEN"
+                        clusterName: "$CLUSTER_NAME"
+                        namespace: "$HEADLAMP_NAMESPACE"
+                        serviceAccountName: "$HEADLAMP_SERVICE_ACCOUNT"
+                        sourceSecretName: "$HEADLAMP_TOKEN_SECRET"
+                      EOF
+
+                      echo "Published Headlamp token to $PLATFORM_CLUSTER_NAMESPACE/$PUBLISHED_SECRET_NAME"
+                      rm -f /tmp/lke-kubeconfig

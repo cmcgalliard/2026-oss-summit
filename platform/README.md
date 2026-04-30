@@ -54,6 +54,15 @@ The `PlatformCluster` schema exposes these built-in components:
 
 When enabled, the RGD creates Argo CD `Application` resources in the management cluster's `argocd` namespace and points each application's `spec.destination.server` at the new LKE cluster endpoint.
 
+When `headlamp.enabled: true`, the graph also publishes a management-cluster secret named `<clusterName>-headlamp-token` in the same namespace as the `PlatformCluster`. The secret contains the Headlamp login token under `data.token`.
+
+Retrieve it with:
+
+```bash
+kubectl get secret <clusterName>-headlamp-token -n <platformClusterNamespace> \
+  -o go-template='{{index .data "token" | base64decode}}'
+```
+
 ## Examples
 
 Examples are intentionally not under `platform/crd/`, so Argo CD does not auto-create demo clusters during sync.
