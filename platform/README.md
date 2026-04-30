@@ -50,6 +50,7 @@ kubectl apply -f platform/examples/dev-cluster.yaml
 
 The `PlatformCluster` schema exposes these built-in components:
 
+- `gatewayFabric`
 - `o11yStack`
 - `harbor`
 - `headlamp`
@@ -91,6 +92,7 @@ platform/
         score.yaml
         rendered/
           namespace.yaml
+          gateway.yaml
           manifests.yaml
 ```
 
@@ -101,7 +103,10 @@ Rules:
 - each app uses `spec.destination.name: <cluster>`
 - each app points at `platform/workloads/apps/<app>/rendered`
 - `namespace.yaml` is committed so prune-on-delete stays predictable
+- `gateway.yaml` creates a demo `Gateway` named `default` in the app namespace
 - app names are repo-global and reusable across clusters
+
+If a Score workload renders `HTTPRoute` resources, enable `spec.components.gatewayFabric.enabled` on the target `PlatformCluster` so the child cluster has Gateway API CRDs and the `nginx-gateway-fabric` controller.
 
 Helper scripts:
 
@@ -121,4 +126,4 @@ Delete flow:
 
 Set `spec.components.userApps.enabled` to the exact app names that should be deployed to the cluster.
 
-This flow deploys workloads onto an existing child cluster. It does not provision the cluster, ingress, DNS, or TLS for the workload.
+This flow deploys workloads onto an existing child cluster. For the demo path, it can also provision per-app `Gateway` resources when `gatewayFabric` is enabled on the target cluster. Shared ingress, DNS, and TLS policy remain out of scope.

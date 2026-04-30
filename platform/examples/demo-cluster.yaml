@@ -19,6 +19,8 @@ spec:
       environment: dev
       team: platform-team
   components:
+    gatewayFabric:
+      enabled: true
     userApps:
       enabled:
         - demo-app

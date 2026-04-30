@@ -27,6 +27,8 @@ spec:
       components:
         userApps:
           enabled: '[]string | uniqueItems=true'
+        gatewayFabric:
+          enabled: boolean | default=false
         o11yStack:
           enabled: boolean | default=false
           loki: boolean | default=true
@@ -347,6 +349,7 @@ spec:
           namespace: argocd
           annotations:
             platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+            argocd.argoproj.io/sync-wave: "2"
           finalizers:
             - resources-finalizer.argocd.argoproj.io
           labels:
@@ -371,6 +374,75 @@ spec:
                 duration: 5s
                 factor: 2
                 maxDuration: 3m
+
+    - id: gatewayApiCrdsApp
+      includeWhen:
+        - ${schema.spec.components.gatewayFabric.enabled}
+      template:
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-gateway-api-crds"
+          namespace: argocd
+          annotations:
+            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+            argocd.argoproj.io/sync-wave: "0"
+          finalizers:
+            - resources-finalizer.argocd.argoproj.io
+          labels:
+            platform-cluster: ${schema.metadata.name}
+            component: platform
+        spec:
+          project: default
+          source:
+            repoURL: https://github.com/nginx/nginx-gateway-fabric.git
+            targetRevision: v2.5.1
+            path: config/crd/gateway-api/standard
+          destination:
+            server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
+            namespace: nginx-gateway
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+            syncOptions:
+              - CreateNamespace=true
+              - ServerSideApply=true
+
+    - id: gatewayFabricApp
+      includeWhen:
+        - ${schema.spec.components.gatewayFabric.enabled}
+      template:
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-gateway-fabric"
+          namespace: argocd
+          annotations:
+            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+            argocd.argoproj.io/sync-wave: "1"
+          finalizers:
+            - resources-finalizer.argocd.argoproj.io
+          labels:
+            platform-cluster: ${schema.metadata.name}
+            component: platform
+        spec:
+          project: default
+          source:
+            repoURL: https://github.com/nginx/nginx-gateway-fabric.git
+            targetRevision: v2.5.1
+            path: charts/nginx-gateway-fabric
+            helm:
+              releaseName: ngf
+          destination:
+            server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
+            namespace: nginx-gateway
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+            syncOptions:
+              - CreateNamespace=true
 
     - id: lokiApp
       includeWhen:

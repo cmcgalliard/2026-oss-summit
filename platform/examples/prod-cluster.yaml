@@ -20,6 +20,8 @@ spec:
       environment: prod
       team: platform-team
   components:
+    gatewayFabric:
+      enabled: true
     o11yStack:
       enabled: true
       loki: true

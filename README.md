@@ -125,6 +125,7 @@ platform/
         score.yaml
         rendered/
           namespace.yaml
+          gateway.yaml
           manifests.yaml
 ```
 
@@ -139,6 +140,7 @@ Prerequisites:
 - repo write access
 - an existing child cluster already registered in Argo CD by `PlatformCluster`
 - the target app name listed under `spec.components.userApps.enabled`
+- `spec.components.gatewayFabric.enabled: true` on any `PlatformCluster` that should run Score `HTTPRoute` resources
 
 Create a new workload:
 
@@ -151,6 +153,8 @@ Then enable that app on the target `PlatformCluster`:
 ```yaml
 spec:
   components:
+    gatewayFabric:
+      enabled: true
     userApps:
       enabled:
         - demo-app
@@ -173,7 +177,7 @@ The sample implementation in this repo is `platform/workloads/apps/demo-app/`.
 Out of scope for this MVP:
 
 - provisioning the child cluster itself
-- ingress, DNS, and TLS setup for app workloads
+- shared ingress, DNS, and TLS policy for app workloads beyond the per-app demo `Gateway`
 - arbitrary external infrastructure dependencies beyond what `score-k8s` can render locally
 
 ## Day-2 Changes

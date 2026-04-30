@@ -61,6 +61,20 @@ metadata:
   name: $app
 EOF
 
+cat > "$workload_dir/rendered/gateway.yaml" <<EOF
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: default
+  namespace: $app
+spec:
+  gatewayClassName: nginx
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+EOF
+
 if command -v score-k8s >/dev/null 2>&1; then
   "$repo_root/platform/scripts/render-score-app.sh" "$app"
 else

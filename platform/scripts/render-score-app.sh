@@ -35,6 +35,20 @@ metadata:
   name: $namespace
 EOF
 
+cat > "$workload_dir/rendered/gateway.yaml" <<EOF
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: default
+  namespace: $namespace
+spec:
+  gatewayClassName: nginx
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+EOF
+
 (
   cd "$workload_dir"
   score-k8s init --no-sample >/dev/null

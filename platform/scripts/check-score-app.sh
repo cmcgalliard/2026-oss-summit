@@ -37,10 +37,12 @@ for workload_dir in "${workloads[@]}"; do
 
   [ -f "$workload_dir/score.yaml" ] || { echo "missing $workload_dir/score.yaml" >&2; exit 1; }
   [ -f "$rendered_dir/namespace.yaml" ] || { echo "missing $rendered_dir/namespace.yaml" >&2; exit 1; }
+  [ -f "$rendered_dir/gateway.yaml" ] || { echo "missing $rendered_dir/gateway.yaml" >&2; exit 1; }
   [ -f "$rendered_dir/manifests.yaml" ] || { echo "missing $rendered_dir/manifests.yaml" >&2; exit 1; }
 
   "$repo_root/platform/scripts/render-score-app.sh" "$app"
   generated_files+=("$rendered_dir/namespace.yaml")
+  generated_files+=("$rendered_dir/gateway.yaml")
   generated_files+=("$rendered_dir/manifests.yaml")
 done
 
