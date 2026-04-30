@@ -68,7 +68,7 @@ metadata:
   name: default
   namespace: $app
 spec:
-  gatewayClassName: nginx
+  gatewayClassName: traefik
   listeners:
     - name: web
       protocol: HTTP

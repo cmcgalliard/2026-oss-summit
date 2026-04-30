@@ -42,7 +42,7 @@ metadata:
   name: default
   namespace: $namespace
 spec:
-  gatewayClassName: nginx
+  gatewayClassName: traefik
   listeners:
     - name: web
       protocol: HTTP

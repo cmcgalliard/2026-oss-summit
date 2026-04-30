@@ -444,7 +444,7 @@ spec:
                     enabled: true
                 gatewayClass:
                   enabled: true
-                  name: nginx
+                  name: traefik
                 gateway:
                   enabled: true
                   name: traefik-gateway

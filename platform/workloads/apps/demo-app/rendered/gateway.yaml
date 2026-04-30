@@ -4,7 +4,7 @@ metadata:
   name: default
   namespace: demo-app
 spec:
-  gatewayClassName: nginx
+  gatewayClassName: traefik
   listeners:
     - name: web
       protocol: HTTP
