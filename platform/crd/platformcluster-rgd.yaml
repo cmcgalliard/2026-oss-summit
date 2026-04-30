@@ -12,6 +12,12 @@ spec:
         clusterName: string | required=true
         region: string | default="us-ord"
         kubernetesVersion: string | default="1.35"
+        # Deprecated no-op field kept only to avoid breaking the published CRD schema.
+        controlPlaneAcl:
+          enabled: boolean | default=false
+          addresses:
+            ipv4: "[]string"
+            ipv6: "[]string"
         nodePool:
           count: integer | default=3
           type: string | default="g6-standard-6"
