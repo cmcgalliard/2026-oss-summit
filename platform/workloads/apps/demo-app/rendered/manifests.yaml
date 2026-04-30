@@ -109,7 +109,7 @@ spec:
     - name: tcp
       port: 80
       protocol: TCP
-      targetPort: 80
+      targetPort: 8080
   selector:
     app.kubernetes.io/instance: nginx-7926ec64af
 status:
