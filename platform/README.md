@@ -17,6 +17,8 @@ platform/
   apps/      Argo CD Application manifests, including platform-crd
   crd/       Synced KRO ResourceGraphDefinitions
   examples/  Manual-only PlatformCluster examples
+  scripts/   Score workload helper scripts
+  workloads/ Per-cluster Score source and rendered manifests
 ```
 
 `platform/bootstrap/app-of-apps.yaml` only reconciles `platform/apps/`, so the live RGD lives under `platform/crd/` and is pulled in through `platform/apps/platform-crd.yaml`.
@@ -54,6 +56,8 @@ The `PlatformCluster` schema exposes these built-in components:
 
 When enabled, the RGD creates Argo CD `Application` resources in the management cluster's `argocd` namespace and points each application's `spec.destination.server` at the new LKE cluster endpoint.
 
+The cluster registration job also creates an Argo CD cluster secret with `stringData.name: <clusterName>`. User workload applications can target that registered child cluster with `spec.destination.name: <clusterName>` instead of hard-coding the API server URL.
+
 When `headlamp.enabled: true`, the graph also publishes a management-cluster secret named `<clusterName>-headlamp-token` in the same namespace as the `PlatformCluster`. The secret contains the Headlamp login token under `data.token`.
 
 Retrieve it with:
@@ -72,3 +76,48 @@ Examples are intentionally not under `platform/crd/`, so Argo CD does not auto-c
 - `platform/examples/prod-cluster.yaml`
 
 Apply them manually when you want to test or provision a cluster.
+
+## User Workloads
+
+Once a child cluster exists and Argo CD has registered it, developers can deploy workloads to it through git.
+
+Use this repo contract:
+
+```text
+platform/
+  workloads/
+    <cluster>/
+      <app>/
+        score.yaml
+        rendered/
+          namespace.yaml
+          manifests.yaml
+```
+
+Rules:
+
+- `spec.components.userApps.enabled` is the allowlist of app names for that cluster
+- `PlatformCluster` creates one Argo app per enabled name: `<cluster>-<app>`
+- each app uses `spec.destination.name: <cluster>`
+- each app points at `platform/workloads/<cluster>/<app>/rendered`
+- `namespace.yaml` is committed so prune-on-delete stays predictable
+
+Helper scripts:
+
+- `platform/scripts/scaffold-score-app.sh <cluster> <app>`
+- `platform/scripts/render-score-app.sh <cluster> <app>`
+- `platform/scripts/check-score-app.sh [<cluster> <app>]`
+
+Sample app:
+
+- `platform/workloads/demo-cluster/demo-app/`
+
+Delete flow:
+
+1. Remove the app name from `spec.components.userApps.enabled`
+2. Remove `platform/workloads/<cluster>/<app>/`
+3. Commit and push so KRO prunes the Argo app and Argo prunes the workload resources
+
+Set `spec.components.userApps.enabled` to the exact app names that should be deployed to the cluster.
+
+This flow deploys workloads onto an existing child cluster. It does not provision the cluster, ingress, DNS, or TLS for the workload.

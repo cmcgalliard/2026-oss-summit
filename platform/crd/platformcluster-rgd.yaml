@@ -19,6 +19,8 @@ spec:
           environment: string | default="dev"
           team: string | required=true
       components:
+        userApps:
+          enabled: '[]string | uniqueItems=true'
         o11yStack:
           enabled: boolean | default=false
           loki: boolean | default=true
@@ -254,6 +256,42 @@ spec:
 
                       echo "Cluster $CLUSTER_NAME registered with ArgoCD."
                       rm -f /tmp/lke-kubeconfig
+
+    - id: userWorkloadsApp
+      forEach:
+        - appName: ${schema.spec.components.userApps.enabled}
+      template:
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-${appName}"
+          namespace: argocd
+          annotations:
+            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+          finalizers:
+            - resources-finalizer.argocd.argoproj.io
+          labels:
+            platform-cluster: ${schema.metadata.name}
+            component: workloads
+        spec:
+          project: default
+          source:
+            repoURL: git@github.com:cmcgalliard/2026-oss-summit.git
+            targetRevision: try-three
+            path: "platform/workloads/${schema.spec.clusterSpec.clusterName}/${appName}/rendered"
+          destination:
+            name: "${schema.spec.clusterSpec.clusterName}"
+            namespace: ${appName}
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+            retry:
+              limit: 3
+              backoff:
+                duration: 5s
+                factor: 2
+                maxDuration: 3m
 
     - id: lokiApp
       includeWhen:

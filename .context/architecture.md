@@ -124,7 +124,7 @@ sources:
 
 ### Score.dev
 - CLI translation layer (not in-cluster operator)
-- Manifests: `platform/score/`
+- Manifests: `platform/workloads/<cluster>/<app>/rendered/`
 - Sync wave: 3
 
 ## Next Steps (user-guided)

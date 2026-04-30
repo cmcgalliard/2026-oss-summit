@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    k8s.score.dev/workload-name: demo-app
+  labels:
+    app.kubernetes.io/instance: demo-app-473618b0e5
+    app.kubernetes.io/managed-by: score-k8s
+    app.kubernetes.io/name: demo-app
+  name: demo-app
+  namespace: demo-app
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    app.kubernetes.io/instance: demo-app-473618b0e5
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    k8s.score.dev/workload-name: demo-app
+  labels:
+    app.kubernetes.io/instance: demo-app-473618b0e5
+    app.kubernetes.io/managed-by: score-k8s
+    app.kubernetes.io/name: demo-app
+  name: demo-app
+  namespace: demo-app
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: demo-app-473618b0e5
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        k8s.score.dev/workload-name: demo-app
+      labels:
+        app.kubernetes.io/instance: demo-app-473618b0e5
+        app.kubernetes.io/managed-by: score-k8s
+        app.kubernetes.io/name: demo-app
+    spec:
+      containers:
+        - image: nginx:1.27
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+          name: demo-app
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+          resources:
+            limits:
+              cpu: 250m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+status: {}

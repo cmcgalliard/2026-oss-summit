@@ -20,7 +20,7 @@ GitOps-managed platform for an Akamai Cloud Linode Kubernetes Engine cluster. Th
 - `Grafana`, `Loki`, `Tempo`: observability stack
 - `KRO`: Kubernetes Resource Orchestrator
 - `PlatformCluster`: KRO resource graph for self-service cluster provisioning
-- `Score`: example workload specification under `platform/score/`
+- `Score`: GitOps workflow for rendering app manifests under `platform/workloads/`
 
 ## Repository Layout
 
@@ -33,7 +33,8 @@ platform/
   crossplane/   Provider and provider config manifests
   examples/     Manual-only PlatformCluster examples
   helm/         Helm values files by service
-  score/        Example Score workload manifests
+  scripts/      Score workload scaffold, render, and check helpers
+  workloads/    Per-cluster Score source and rendered manifests
 ```
 
 ## Prerequisites
@@ -84,7 +85,7 @@ kubectl get secret grafana-admin-secret -n o11y -o jsonpath='{.data.admin-passwo
 Wave 0: bootstrap Argo CD and imperative secrets
 Wave 1: cert-manager, crossplane
 Wave 2: traefik, crossplane-providers
-Wave 3: kro, o11y, external-dns, score
+Wave 3: kro, o11y, external-dns, workload apps
 Wave 4: cert-manager-issuers
 Wave 5: platform-crd
 ```
@@ -105,11 +106,81 @@ kubectl apply -f platform/examples/dev-cluster.yaml
 
 See `platform/README.md` for the schema, prerequisites, and usage flow.
 
+## Score Workloads
+
+This repo supports self-service workload deployment onto an existing `PlatformCluster`-managed child cluster.
+
+- Commit the source Score file under `platform/workloads/<cluster>/<app>/score.yaml`
+- Render Kubernetes YAML locally into `platform/workloads/<cluster>/<app>/rendered/`
+- Add the app name to `spec.components.userApps.enabled` on the target `PlatformCluster`
+- The KRO-managed `PlatformCluster` creates one Argo CD workload `Application` per enabled app and targets the child cluster using `spec.destination.name: <cluster>`
+
+The committed layout is:
+
+```text
+platform/
+  workloads/
+    <cluster>/
+      <app>/
+        score.yaml
+        rendered/
+          namespace.yaml
+          manifests.yaml
+```
+
+The namespace convention is the app name, so `demo-cluster/demo-app` deploys into namespace `demo-app`.
+
+### Quick Start
+
+Prerequisites:
+
+- `score-k8s`
+- `kubectl`
+- repo write access
+- an existing child cluster already registered in Argo CD by `PlatformCluster`
+- the target app name listed under `spec.components.userApps.enabled`
+
+Create a new workload:
+
+```bash
+bash platform/scripts/scaffold-score-app.sh demo-cluster demo-app
+```
+
+Then enable that app on the target `PlatformCluster`:
+
+```yaml
+spec:
+  components:
+    userApps:
+      enabled:
+        - demo-app
+```
+
+Re-render a workload after editing `score.yaml`:
+
+```bash
+bash platform/scripts/render-score-app.sh demo-cluster demo-app
+```
+
+Validate all committed workloads:
+
+```bash
+bash platform/scripts/check-score-app.sh
+```
+
+The sample implementation in this repo is `platform/workloads/demo-cluster/demo-app/`.
+
+Out of scope for this MVP:
+
+- provisioning the child cluster itself
+- ingress, DNS, and TLS setup for app workloads
+- arbitrary external infrastructure dependencies beyond what `score-k8s` can render locally
+
 ## Day-2 Changes
 
-- Add or update Argo CD apps in `platform/apps/`
+- Add or update cluster-scoped platform apps in `platform/apps/`
 - Tune chart configuration in `platform/helm/`
-- Update platform manifests in `platform/cert-manager/`, `platform/crossplane/`, `platform/crd/`, or `platform/score/`
+- Update platform manifests in `platform/cert-manager/`, `platform/crossplane/`, `platform/crd/`, or `platform/workloads/`
 - Apply or update manual examples in `platform/examples/` when testing `PlatformCluster`
 - Commit and push changes so Argo CD can reconcile them
 

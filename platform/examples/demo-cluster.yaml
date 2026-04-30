@@ -19,6 +19,9 @@ spec:
       environment: dev
       team: platform-team
   components:
+    userApps:
+      enabled:
+        - demo-app
     o11yStack:
       enabled: true
       loki: true

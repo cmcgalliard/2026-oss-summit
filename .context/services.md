@@ -116,8 +116,8 @@
 ## Score.dev
 - **Role**: Platform-agnostic workload specification (developer abstraction layer)
 - **Type**: CLI translation layer — NOT an in-cluster operator
-- **Files**: `platform/score/`
-- **ArgoCD App**: `platform/apps/score.yaml`
+- **Files**: `platform/workloads/<cluster>/<app>/`
+- **ArgoCD App**: KRO creates `<cluster>-<app>` for names listed in `spec.components.userApps.enabled`
 - **Sync Wave**: 3
 
 ## Sync Wave Order
@@ -125,6 +125,6 @@
 Wave 0: [bootstrap] ArgoCD + linode-credentials + linode-token + grafana-admin-secret
 Wave 1: cert-manager (CRDs + controller), crossplane (CRDs)
 Wave 2: traefik (ingress), crossplane-providers (linode provider + config)
-Wave 3: kro, loki, tempo, grafana, external-dns, score
+Wave 3: kro, loki, tempo, grafana, external-dns, workload apps
 Wave 4: cert-manager-issuers (letsencrypt-staging, letsencrypt-prod)
 ```
