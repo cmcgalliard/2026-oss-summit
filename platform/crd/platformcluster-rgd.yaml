@@ -72,27 +72,27 @@ spec:
       readyWhen:
         - ${lkeCluster.status.atProvider.status == "ready"}
 
-    - id: nodePool
-      template:
-        apiVersion: lke.linode.upbound.io/v1alpha1
-        kind: NodePool
-        metadata:
-          name: "${schema.spec.clusterSpec.clusterName}-pool"
-          labels:
-            environment: ${schema.spec.clusterSpec.labels.environment}
-            team: ${schema.spec.clusterSpec.labels.team}
-            managed-by: kro-platformcluster
-            platform-cluster-name: ${schema.spec.clusterSpec.clusterName}
-        spec:
-          forProvider:
-            clusterIdSelector:
-              matchLabels:
-                managed-by: kro-platformcluster
-                platform-cluster-name: ${schema.spec.clusterSpec.clusterName}
-            nodeCount: ${double(schema.spec.clusterSpec.nodePool.count)}
-            type: ${schema.spec.clusterSpec.nodePool.type}
-          providerConfigRef:
-            name: default
+    # - id: nodePool
+    #   template:
+    #     apiVersion: lke.linode.upbound.io/v1alpha1
+    #     kind: NodePool
+    #     metadata:
+    #       name: "${schema.spec.clusterSpec.clusterName}-pool"
+    #       labels:
+    #         environment: ${schema.spec.clusterSpec.labels.environment}
+    #         team: ${schema.spec.clusterSpec.labels.team}
+    #         managed-by: kro-platformcluster
+    #         platform-cluster-name: ${schema.spec.clusterSpec.clusterName}
+    #     spec:
+    #       forProvider:
+    #         clusterIdSelector:
+    #           matchLabels:
+    #             managed-by: kro-platformcluster
+    #             platform-cluster-name: ${schema.spec.clusterSpec.clusterName}
+    #         nodeCount: ${double(schema.spec.clusterSpec.nodePool.count)}
+    #         type: ${schema.spec.clusterSpec.nodePool.type}
+    #       providerConfigRef:
+    #         name: default
 
     - id: bootstrapSA
       template:
