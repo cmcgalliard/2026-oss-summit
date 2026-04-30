@@ -3,18 +3,17 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: $0 <cluster> <app>"
+  echo "usage: $0 <app>"
 }
 
-if [ "$#" -ne 2 ]; then
+if [ "$#" -ne 1 ]; then
   usage >&2
   exit 1
 fi
 
-cluster="$1"
-app="$2"
+app="$1"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-workload_dir="$repo_root/platform/workloads/$cluster/$app"
+workload_dir="$repo_root/platform/workloads/apps/$app"
 namespace="$app"
 
 if ! command -v score-k8s >/dev/null 2>&1; then
@@ -42,4 +41,4 @@ EOF
   score-k8s generate score.yaml --namespace "$namespace" -o rendered/manifests.yaml >/dev/null
 )
 
-echo "rendered $cluster/$app"
+echo "rendered $app"

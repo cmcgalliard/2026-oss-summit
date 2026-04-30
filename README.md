@@ -20,7 +20,7 @@ GitOps-managed platform for an Akamai Cloud Linode Kubernetes Engine cluster. Th
 - `Grafana`, `Loki`, `Tempo`: observability stack
 - `KRO`: Kubernetes Resource Orchestrator
 - `PlatformCluster`: KRO resource graph for self-service cluster provisioning
-- `Score`: GitOps workflow for rendering app manifests under `platform/workloads/`
+- `Score`: GitOps workflow for rendering shared app manifests under `platform/workloads/`
 
 ## Repository Layout
 
@@ -34,7 +34,7 @@ platform/
   examples/     Manual-only PlatformCluster examples
   helm/         Helm values files by service
   scripts/      Score workload scaffold, render, and check helpers
-  workloads/    Per-cluster Score source and rendered manifests
+  workloads/    Shared Score source and rendered manifests
 ```
 
 ## Prerequisites
@@ -110,8 +110,8 @@ See `platform/README.md` for the schema, prerequisites, and usage flow.
 
 This repo supports self-service workload deployment onto an existing `PlatformCluster`-managed child cluster.
 
-- Commit the source Score file under `platform/workloads/<cluster>/<app>/score.yaml`
-- Render Kubernetes YAML locally into `platform/workloads/<cluster>/<app>/rendered/`
+- Commit the source Score file under `platform/workloads/apps/<app>/score.yaml`
+- Render Kubernetes YAML locally into `platform/workloads/apps/<app>/rendered/`
 - Add the app name to `spec.components.userApps.enabled` on the target `PlatformCluster`
 - The KRO-managed `PlatformCluster` creates one Argo CD workload `Application` per enabled app and targets the child cluster using `spec.destination.name: <cluster>`
 
@@ -120,7 +120,7 @@ The committed layout is:
 ```text
 platform/
   workloads/
-    <cluster>/
+    apps/
       <app>/
         score.yaml
         rendered/
@@ -128,7 +128,7 @@ platform/
           manifests.yaml
 ```
 
-The namespace convention is the app name, so `demo-cluster/demo-app` deploys into namespace `demo-app`.
+The namespace convention is the app name, so `demo-app` deploys into namespace `demo-app` in every cluster that enables it.
 
 ### Quick Start
 
@@ -143,7 +143,7 @@ Prerequisites:
 Create a new workload:
 
 ```bash
-bash platform/scripts/scaffold-score-app.sh demo-cluster demo-app
+bash platform/scripts/scaffold-score-app.sh demo-app
 ```
 
 Then enable that app on the target `PlatformCluster`:
@@ -159,7 +159,7 @@ spec:
 Re-render a workload after editing `score.yaml`:
 
 ```bash
-bash platform/scripts/render-score-app.sh demo-cluster demo-app
+bash platform/scripts/render-score-app.sh demo-app
 ```
 
 Validate all committed workloads:
@@ -168,7 +168,7 @@ Validate all committed workloads:
 bash platform/scripts/check-score-app.sh
 ```
 
-The sample implementation in this repo is `platform/workloads/demo-cluster/demo-app/`.
+The sample implementation in this repo is `platform/workloads/apps/demo-app/`.
 
 Out of scope for this MVP:
 

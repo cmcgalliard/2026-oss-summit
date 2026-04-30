@@ -5,7 +5,7 @@ metadata:
   annotations:
     k8s.score.dev/workload-name: demo-app
   labels:
-    app.kubernetes.io/instance: demo-app-473618b0e5
+    app.kubernetes.io/instance: demo-app-d7e0a710bc
     app.kubernetes.io/managed-by: score-k8s
     app.kubernetes.io/name: demo-app
   name: demo-app
@@ -17,7 +17,7 @@ spec:
       protocol: TCP
       targetPort: 80
   selector:
-    app.kubernetes.io/instance: demo-app-473618b0e5
+    app.kubernetes.io/instance: demo-app-d7e0a710bc
 status:
   loadBalancer: {}
 ---
@@ -27,7 +27,7 @@ metadata:
   annotations:
     k8s.score.dev/workload-name: demo-app
   labels:
-    app.kubernetes.io/instance: demo-app-473618b0e5
+    app.kubernetes.io/instance: demo-app-d7e0a710bc
     app.kubernetes.io/managed-by: score-k8s
     app.kubernetes.io/name: demo-app
   name: demo-app
@@ -35,14 +35,14 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/instance: demo-app-473618b0e5
+      app.kubernetes.io/instance: demo-app-d7e0a710bc
   strategy: {}
   template:
     metadata:
       annotations:
         k8s.score.dev/workload-name: demo-app
       labels:
-        app.kubernetes.io/instance: demo-app-473618b0e5
+        app.kubernetes.io/instance: demo-app-d7e0a710bc
         app.kubernetes.io/managed-by: score-k8s
         app.kubernetes.io/name: demo-app
     spec:

@@ -116,7 +116,7 @@
 ## Score.dev
 - **Role**: Platform-agnostic workload specification (developer abstraction layer)
 - **Type**: CLI translation layer — NOT an in-cluster operator
-- **Files**: `platform/workloads/<cluster>/<app>/`
+- **Files**: `platform/workloads/apps/<app>/`
 - **ArgoCD App**: KRO creates `<cluster>-<app>` for names listed in `spec.components.userApps.enabled`
 - **Sync Wave**: 3
 

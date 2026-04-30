@@ -18,7 +18,7 @@ platform/
   crd/       Synced KRO ResourceGraphDefinitions
   examples/  Manual-only PlatformCluster examples
   scripts/   Score workload helper scripts
-  workloads/ Per-cluster Score source and rendered manifests
+  workloads/ Shared Score source and rendered manifests
 ```
 
 `platform/bootstrap/app-of-apps.yaml` only reconciles `platform/apps/`, so the live RGD lives under `platform/crd/` and is pulled in through `platform/apps/platform-crd.yaml`.
@@ -86,7 +86,7 @@ Use this repo contract:
 ```text
 platform/
   workloads/
-    <cluster>/
+    apps/
       <app>/
         score.yaml
         rendered/
@@ -96,26 +96,27 @@ platform/
 
 Rules:
 
-- `spec.components.userApps.enabled` is the allowlist of app names for that cluster
+- `spec.components.userApps.enabled` is the allowlist of shared app names for that cluster
 - `PlatformCluster` creates one Argo app per enabled name: `<cluster>-<app>`
 - each app uses `spec.destination.name: <cluster>`
-- each app points at `platform/workloads/<cluster>/<app>/rendered`
+- each app points at `platform/workloads/apps/<app>/rendered`
 - `namespace.yaml` is committed so prune-on-delete stays predictable
+- app names are repo-global and reusable across clusters
 
 Helper scripts:
 
-- `platform/scripts/scaffold-score-app.sh <cluster> <app>`
-- `platform/scripts/render-score-app.sh <cluster> <app>`
-- `platform/scripts/check-score-app.sh [<cluster> <app>]`
+- `platform/scripts/scaffold-score-app.sh <app>`
+- `platform/scripts/render-score-app.sh <app>`
+- `platform/scripts/check-score-app.sh [<app>]`
 
 Sample app:
 
-- `platform/workloads/demo-cluster/demo-app/`
+- `platform/workloads/apps/demo-app/`
 
 Delete flow:
 
 1. Remove the app name from `spec.components.userApps.enabled`
-2. Remove `platform/workloads/<cluster>/<app>/`
+2. Remove `platform/workloads/apps/<app>/`
 3. Commit and push so KRO prunes the Argo app and Argo prunes the workload resources
 
 Set `spec.components.userApps.enabled` to the exact app names that should be deployed to the cluster.

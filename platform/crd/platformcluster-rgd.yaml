@@ -284,7 +284,7 @@ spec:
           source:
             repoURL: git@github.com:cmcgalliard/2026-oss-summit.git
             targetRevision: try-three
-            path: "platform/workloads/${schema.spec.clusterSpec.clusterName}/${appName}/rendered"
+            path: "platform/workloads/apps/${appName}/rendered"
           destination:
             name: "${schema.spec.clusterSpec.clusterName}"
             namespace: ${appName}

@@ -3,22 +3,21 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: $0 <cluster> <app> [image]"
+  echo "usage: $0 <app> [image]"
 }
 
-if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
   usage >&2
   exit 1
 fi
 
-cluster="$1"
-app="$2"
-image="${3:-nginx:1.27}"
+app="$1"
+image="${2:-nginx:1.27}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-workload_dir="$repo_root/platform/workloads/$cluster/$app"
+workload_dir="$repo_root/platform/workloads/apps/$app"
 
 if [ -e "$workload_dir" ]; then
-  echo "app already exists: $cluster/$app" >&2
+  echo "app already exists: $app" >&2
   exit 1
 fi
 
@@ -63,9 +62,9 @@ metadata:
 EOF
 
 if command -v score-k8s >/dev/null 2>&1; then
-  "$repo_root/platform/scripts/render-score-app.sh" "$cluster" "$app"
+  "$repo_root/platform/scripts/render-score-app.sh" "$app"
 else
-  echo "created $cluster/$app"
+  echo "created $app"
   echo "ensure the target PlatformCluster includes $app under spec.components.userApps.enabled"
-  echo "next: score-k8s install, then run platform/scripts/render-score-app.sh $cluster $app"
+  echo "next: score-k8s install, then run platform/scripts/render-score-app.sh $app"
 fi
