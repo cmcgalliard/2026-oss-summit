@@ -201,7 +201,7 @@ spec:
                             echo "Timed out waiting for secret $secret_namespace/$secret_name" >&2
                             exit 1
                           fi
-                          echo "  secret $secret_namespace/$secret_name not found yet, retrying in $RETRY_INTERVALs..." >&2
+                          echo "  secret $secret_namespace/$secret_name not found yet, retrying in $RETRY_INTERVAL""s..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -210,6 +210,48 @@ spec:
                       get_kubeconfig_b64() {
                         local secret_name="$1"
                         kubectl get secret "$secret_name" -n argocd -o go-template='{{index .data "kubeconfig"}}' 2> /dev/null || true
+                      }
+
+                      write_kubeconfig_file() {
+                        local secret_name="$1"
+                        local kubeconfig_b64=""
+                        kubeconfig_b64=$(wait_for_kubeconfig_data "$secret_name")
+                        printf '%s' "$kubeconfig_b64" | base64 -d > /tmp/lke-kubeconfig
+                      }
+
+                      wait_for_usable_kubeconfig() {
+                        local secret_name="$1"
+                        local attempt=1
+                        local server=""
+                        local token=""
+                        local cert_data=""
+                        local key_data=""
+
+                        while true; do
+                          write_kubeconfig_file "$secret_name"
+
+                          server=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                            -o jsonpath='{.clusters[0].cluster.server}' 2> /dev/null || true)
+                          token=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                            -o jsonpath='{.users[0].user.token}' 2> /dev/null || true)
+                          cert_data=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                            -o jsonpath='{.users[0].user.client-certificate-data}' 2> /dev/null || true)
+                          key_data=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                            -o jsonpath='{.users[0].user.client-key-data}' 2> /dev/null || true)
+
+                          if [ -n "$server" ] && { [ -n "$token" ] || { [ -n "$cert_data" ] && [ -n "$key_data" ]; }; }; then
+                            return 0
+                          fi
+
+                          if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                            echo "Timed out waiting for usable kubeconfig data in secret argocd/$secret_name" >&2
+                            exit 1
+                          fi
+
+                          echo "  kubeconfig in argocd/$secret_name is not usable yet, retrying in $RETRY_INTERVAL""s..." >&2
+                          sleep "$RETRY_INTERVAL"
+                          attempt=$((attempt + 1))
+                        done
                       }
 
                       wait_for_kubeconfig_data() {
@@ -231,7 +273,7 @@ spec:
                             kubectl get secret "$secret_name" -n argocd -o go-template='{{range $k, $_ := .data}}{{printf "%s\n" $k}}{{end}}' >&2
                             exit 1
                           fi
-                          echo "  kubeconfig data missing from secret argocd/$secret_name, retrying in $RETRY_INTERVALs..." >&2
+                          echo "  kubeconfig data missing from secret argocd/$secret_name, retrying in $RETRY_INTERVAL""s..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -243,9 +285,7 @@ spec:
 
                       # Upjet connection secrets commonly expose provider attributes
                       # under attribute.<name> instead of the bare key.
-                      KUBECONFIG_B64=$(wait_for_kubeconfig_data "$SECRET_NAME")
-
-                      printf '%s' "$KUBECONFIG_B64" | base64 -d > /tmp/lke-kubeconfig
+                      wait_for_usable_kubeconfig "$SECRET_NAME"
 
                       SERVER=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
                         -o jsonpath='{.clusters[0].cluster.server}')
@@ -627,7 +667,7 @@ spec:
                             echo "Timed out waiting for secret $secret_namespace/$secret_name" >&2
                             exit 1
                           fi
-                          echo "  secret $secret_namespace/$secret_name not found yet, retrying in $RETRY_INTERVALs..." >&2
+                          echo "  secret $secret_namespace/$secret_name not found yet, retrying in $RETRY_INTERVAL""s..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -652,7 +692,49 @@ spec:
                             echo "Timed out waiting for kubeconfig data in secret argocd/$secret_name" >&2
                             exit 1
                           fi
-                          echo "  kubeconfig data missing from secret argocd/$secret_name, retrying in $RETRY_INTERVALs..." >&2
+                          echo "  kubeconfig data missing from secret argocd/$secret_name, retrying in $RETRY_INTERVAL""s..." >&2
+                          sleep "$RETRY_INTERVAL"
+                          attempt=$((attempt + 1))
+                        done
+                      }
+
+                      write_kubeconfig_file() {
+                        local secret_name="$1"
+                        local kubeconfig_b64=""
+                        kubeconfig_b64=$(wait_for_kubeconfig_data "$secret_name")
+                        printf '%s' "$kubeconfig_b64" | base64 -d > /tmp/lke-kubeconfig
+                      }
+
+                      wait_for_usable_kubeconfig() {
+                        local secret_name="$1"
+                        local attempt=1
+                        local server=""
+                        local token=""
+                        local cert_data=""
+                        local key_data=""
+
+                        while true; do
+                          write_kubeconfig_file "$secret_name"
+
+                          server=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                            -o jsonpath='{.clusters[0].cluster.server}' 2> /dev/null || true)
+                          token=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                            -o jsonpath='{.users[0].user.token}' 2> /dev/null || true)
+                          cert_data=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                            -o jsonpath='{.users[0].user.client-certificate-data}' 2> /dev/null || true)
+                          key_data=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                            -o jsonpath='{.users[0].user.client-key-data}' 2> /dev/null || true)
+
+                          if [ -n "$server" ] && { [ -n "$token" ] || { [ -n "$cert_data" ] && [ -n "$key_data" ]; }; }; then
+                            return 0
+                          fi
+
+                          if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                            echo "Timed out waiting for usable kubeconfig data in secret argocd/$secret_name" >&2
+                            exit 1
+                          fi
+
+                          echo "  kubeconfig in argocd/$secret_name is not usable yet, retrying in $RETRY_INTERVAL""s..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -665,7 +747,7 @@ spec:
                             echo "Timed out waiting for child cluster API to become ready" >&2
                             exit 1
                           fi
-                          echo "  child cluster API not ready yet, retrying in $RETRY_INTERVALs..." >&2
+                          echo "  child cluster API not ready yet, retrying in $RETRY_INTERVAL""s..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -680,7 +762,7 @@ spec:
                             echo "Timed out waiting for service account $service_account_namespace/$service_account_name" >&2
                             exit 1
                           fi
-                          echo "  service account $service_account_namespace/$service_account_name not found yet, retrying in $RETRY_INTERVALs..." >&2
+                          echo "  service account $service_account_namespace/$service_account_name not found yet, retrying in $RETRY_INTERVAL""s..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -702,7 +784,7 @@ spec:
                             echo "Timed out waiting for token data in secret $secret_namespace/$secret_name" >&2
                             exit 1
                           fi
-                          echo "  token data missing from secret $secret_namespace/$secret_name, retrying in $RETRY_INTERVALs..." >&2
+                          echo "  token data missing from secret $secret_namespace/$secret_name, retrying in $RETRY_INTERVAL""s..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -711,9 +793,7 @@ spec:
                       echo "Waiting for kubeconfig secret: $SOURCE_SECRET_NAME"
                       wait_for_secret "$SOURCE_SECRET_NAME" argocd
 
-                      KUBECONFIG_B64=$(wait_for_kubeconfig_data "$SOURCE_SECRET_NAME")
-
-                      printf '%s' "$KUBECONFIG_B64" | base64 -d > /tmp/lke-kubeconfig
+                      wait_for_usable_kubeconfig "$SOURCE_SECRET_NAME"
 
                       echo "Waiting for child cluster API readiness"
                       wait_for_cluster_api
