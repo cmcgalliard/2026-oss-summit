@@ -1,49 +1,49 @@
 ---
 apiVersion: v1
 data:
-  password: ZEtvdGZ1M0h5NXVEcTR0WA==
+  password: aDY5anRtQzJ6eGsyTnhHMg==
 kind: Secret
 metadata:
   annotations:
-    k8s.score.dev/resource-guid: 74d297ba-6622-45c8-a591-ccc342bea7cd
+    k8s.score.dev/resource-guid: 348c277b-7e34-4d98-87cc-5a29d1108dcd
     k8s.score.dev/resource-uid: postgres.default#hello-world.db
     k8s.score.dev/source-workload: hello-world
   labels:
-    app.kubernetes.io/instance: pg-hello-world-74d297ba
+    app.kubernetes.io/instance: pg-hello-world-348c277b
     app.kubernetes.io/managed-by: score-k8s
-    app.kubernetes.io/name: pg-hello-world-74d297ba
-  name: pg-hello-world-74d297ba
+    app.kubernetes.io/name: pg-hello-world-348c277b
+  name: pg-hello-world-348c277b
   namespace: demo-app
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   annotations:
-    k8s.score.dev/resource-guid: 74d297ba-6622-45c8-a591-ccc342bea7cd
+    k8s.score.dev/resource-guid: 348c277b-7e34-4d98-87cc-5a29d1108dcd
     k8s.score.dev/resource-uid: postgres.default#hello-world.db
     k8s.score.dev/source-workload: hello-world
   labels:
-    app.kubernetes.io/instance: pg-hello-world-74d297ba
+    app.kubernetes.io/instance: pg-hello-world-348c277b
     app.kubernetes.io/managed-by: score-k8s
-    app.kubernetes.io/name: pg-hello-world-74d297ba
-  name: pg-hello-world-74d297ba
+    app.kubernetes.io/name: pg-hello-world-348c277b
+  name: pg-hello-world-348c277b
   namespace: demo-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: pg-hello-world-74d297ba
-  serviceName: pg-hello-world-74d297ba
+      app.kubernetes.io/instance: pg-hello-world-348c277b
+  serviceName: pg-hello-world-348c277b
   template:
     metadata:
       annotations:
-        k8s.score.dev/resource-guid: 74d297ba-6622-45c8-a591-ccc342bea7cd
+        k8s.score.dev/resource-guid: 348c277b-7e34-4d98-87cc-5a29d1108dcd
         k8s.score.dev/resource-uid: postgres.default#hello-world.db
         k8s.score.dev/source-workload: hello-world
       labels:
-        app.kubernetes.io/instance: pg-hello-world-74d297ba
+        app.kubernetes.io/instance: pg-hello-world-348c277b
         app.kubernetes.io/managed-by: score-k8s
-        app.kubernetes.io/name: pg-hello-world-74d297ba
+        app.kubernetes.io/name: pg-hello-world-348c277b
     spec:
       automountServiceAccountToken: false
       containers:
@@ -51,14 +51,14 @@ spec:
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
             - name: POSTGRES_USER
-              value: user-ZubbHUpg
+              value: user-DxiADSNw
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   key: password
-                  name: pg-hello-world-74d297ba
+                  name: pg-hello-world-348c277b
             - name: POSTGRES_DB
-              value: db-ZpDeLulS
+              value: db-zHasluCy
           image: mirror.gcr.io/postgres:17-alpine
           name: postgres-db
           ports:
@@ -69,9 +69,9 @@ spec:
               command:
                 - pg_isready
                 - -U
-                - user-ZubbHUpg
+                - user-DxiADSNw
                 - -d
-                - db-ZpDeLulS
+                - db-zHasluCy
             periodSeconds: 3
           securityContext:
             allowPrivilegeEscalation: false
@@ -92,13 +92,13 @@ spec:
   volumeClaimTemplates:
     - metadata:
         annotations:
-          k8s.score.dev/resource-guid: 74d297ba-6622-45c8-a591-ccc342bea7cd
+          k8s.score.dev/resource-guid: 348c277b-7e34-4d98-87cc-5a29d1108dcd
           k8s.score.dev/resource-uid: postgres.default#hello-world.db
           k8s.score.dev/source-workload: hello-world
         labels:
-          app.kubernetes.io/instance: pg-hello-world-74d297ba
+          app.kubernetes.io/instance: pg-hello-world-348c277b
           app.kubernetes.io/managed-by: score-k8s
-          app.kubernetes.io/name: pg-hello-world-74d297ba
+          app.kubernetes.io/name: pg-hello-world-348c277b
         name: pv-data
       spec:
         accessModes:
@@ -111,39 +111,39 @@ apiVersion: v1
 kind: Service
 metadata:
   annotations:
-    k8s.score.dev/resource-guid: 74d297ba-6622-45c8-a591-ccc342bea7cd
+    k8s.score.dev/resource-guid: 348c277b-7e34-4d98-87cc-5a29d1108dcd
     k8s.score.dev/resource-uid: postgres.default#hello-world.db
     k8s.score.dev/source-workload: hello-world
   labels:
-    app.kubernetes.io/instance: pg-hello-world-74d297ba
+    app.kubernetes.io/instance: pg-hello-world-348c277b
     app.kubernetes.io/managed-by: score-k8s
-    app.kubernetes.io/name: pg-hello-world-74d297ba
-  name: pg-hello-world-74d297ba
+    app.kubernetes.io/name: pg-hello-world-348c277b
+  name: pg-hello-world-348c277b
   namespace: demo-app
 spec:
   ports:
     - port: 5432
       targetPort: 5432
   selector:
-    app.kubernetes.io/instance: pg-hello-world-74d297ba
+    app.kubernetes.io/instance: pg-hello-world-348c277b
   type: ClusterIP
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   annotations:
-    k8s.score.dev/resource-guid: afc2f309-2373-434d-4167-4b206add0c65
+    k8s.score.dev/resource-guid: 6db47f94-c302-4217-9780-538914ca2927
     k8s.score.dev/resource-uid: route.default#hello-world.route
     k8s.score.dev/source-workload: hello-world
   labels:
-    app.kubernetes.io/instance: route-hello-world-afc2f309
+    app.kubernetes.io/instance: route-hello-world-6db47f94
     app.kubernetes.io/managed-by: score-k8s
-    app.kubernetes.io/name: route-hello-world-afc2f309
-  name: route-hello-world-afc2f309
+    app.kubernetes.io/name: route-hello-world-6db47f94
+  name: route-hello-world-6db47f94
   namespace: demo-app
 spec:
   hostnames:
-    - dnsc8sljv.localhost
+    - dnskumwsd.localhost
   parentRefs:
     - name: default
   rules:
@@ -155,40 +155,13 @@ spec:
             type: PathPrefix
             value: /
 ---
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  annotations:
-    k8s.score.dev/resource-guid: 39023dfc-871d-4acd-69c7-d2d26b1c1d95
-    k8s.score.dev/resource-uid: route.default#nginx.route
-    k8s.score.dev/source-workload: nginx
-  labels:
-    app.kubernetes.io/instance: route-nginx-39023dfc
-    app.kubernetes.io/managed-by: score-k8s
-    app.kubernetes.io/name: route-nginx-39023dfc
-  name: route-nginx-39023dfc
-  namespace: demo-app
-spec:
-  hostnames:
-    - dns2qseev.localhost
-  parentRefs:
-    - name: default
-  rules:
-    - backendRefs:
-        - name: nginx
-          port: 80
-      matches:
-        - path:
-            type: PathPrefix
-            value: /
----
 apiVersion: v1
 kind: Service
 metadata:
   annotations:
     k8s.score.dev/workload-name: hello-world
   labels:
-    app.kubernetes.io/instance: hello-world-ba64bcdac9
+    app.kubernetes.io/instance: hello-world-9079ee0beb
     app.kubernetes.io/managed-by: score-k8s
     app.kubernetes.io/name: hello-world
   name: hello-world
@@ -200,7 +173,7 @@ spec:
       protocol: TCP
       targetPort: 3000
   selector:
-    app.kubernetes.io/instance: hello-world-ba64bcdac9
+    app.kubernetes.io/instance: hello-world-9079ee0beb
 status:
   loadBalancer: {}
 ---
@@ -210,7 +183,7 @@ metadata:
   annotations:
     k8s.score.dev/workload-name: hello-world
   labels:
-    app.kubernetes.io/instance: hello-world-ba64bcdac9
+    app.kubernetes.io/instance: hello-world-9079ee0beb
     app.kubernetes.io/managed-by: score-k8s
     app.kubernetes.io/name: hello-world
   name: hello-world
@@ -218,7 +191,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/instance: hello-world-ba64bcdac9
+      app.kubernetes.io/instance: hello-world-9079ee0beb
   strategy: {}
   template:
     metadata:
@@ -226,150 +199,30 @@ spec:
         k8s.score.dev/workload-name: hello-world
         tags: nodejs,http,website,javascript,postgres
       labels:
-        app.kubernetes.io/instance: hello-world-ba64bcdac9
+        app.kubernetes.io/instance: hello-world-9079ee0beb
         app.kubernetes.io/managed-by: score-k8s
         app.kubernetes.io/name: hello-world
     spec:
       containers:
         - env:
             - name: DB_DATABASE
-              value: db-ZpDeLulS
+              value: db-zHasluCy
             - name: DB_HOST
-              value: pg-hello-world-74d297ba
+              value: pg-hello-world-348c277b
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   key: password
-                  name: pg-hello-world-74d297ba
+                  name: pg-hello-world-348c277b
             - name: DB_PORT
               value: "5432"
             - name: DB_USER
-              value: user-ZubbHUpg
+              value: user-DxiADSNw
             - name: MESSAGE
               value: Hello, World!
             - name: PORT
               value: "3000"
           image: scorespec/sample-score-app:latest
           name: hello-world
-          resources: {}
-status: {}
----
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    k8s.score.dev/workload-name: demo-app
-  labels:
-    app.kubernetes.io/instance: demo-app-d7e0a710bc
-    app.kubernetes.io/managed-by: score-k8s
-    app.kubernetes.io/name: demo-app
-  name: demo-app
-  namespace: demo-app
-spec:
-  ports:
-    - name: http
-      port: 80
-      protocol: TCP
-      targetPort: 80
-  selector:
-    app.kubernetes.io/instance: demo-app-d7e0a710bc
-status:
-  loadBalancer: {}
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  annotations:
-    k8s.score.dev/workload-name: demo-app
-  labels:
-    app.kubernetes.io/instance: demo-app-d7e0a710bc
-    app.kubernetes.io/managed-by: score-k8s
-    app.kubernetes.io/name: demo-app
-  name: demo-app
-  namespace: demo-app
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/instance: demo-app-d7e0a710bc
-  strategy: {}
-  template:
-    metadata:
-      annotations:
-        k8s.score.dev/workload-name: demo-app
-      labels:
-        app.kubernetes.io/instance: demo-app-d7e0a710bc
-        app.kubernetes.io/managed-by: score-k8s
-        app.kubernetes.io/name: demo-app
-    spec:
-      containers:
-        - image: nginx:1.27
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
-          name: demo-app
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 80
-          resources:
-            limits:
-              cpu: 250m
-              memory: 256Mi
-            requests:
-              cpu: 100m
-              memory: 128Mi
-status: {}
----
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    k8s.score.dev/workload-name: nginx
-  labels:
-    app.kubernetes.io/instance: nginx-7926ec64af
-    app.kubernetes.io/managed-by: score-k8s
-    app.kubernetes.io/name: nginx
-  name: nginx
-  namespace: demo-app
-spec:
-  ports:
-    - name: tcp
-      port: 80
-      protocol: TCP
-      targetPort: 8080
-  selector:
-    app.kubernetes.io/instance: nginx-7926ec64af
-status:
-  loadBalancer: {}
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  annotations:
-    k8s.score.dev/workload-name: nginx
-  labels:
-    app.kubernetes.io/instance: nginx-7926ec64af
-    app.kubernetes.io/managed-by: score-k8s
-    app.kubernetes.io/name: nginx
-  name: nginx
-  namespace: demo-app
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/instance: nginx-7926ec64af
-  strategy: {}
-  template:
-    metadata:
-      annotations:
-        k8s.score.dev/workload-name: nginx
-      labels:
-        app.kubernetes.io/instance: nginx-7926ec64af
-        app.kubernetes.io/managed-by: score-k8s
-        app.kubernetes.io/name: nginx
-    spec:
-      containers:
-        - image: scorespec/sample-score-app:latest
-          name: webapp
           resources: {}
 status: {}
