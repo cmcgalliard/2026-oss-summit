@@ -58,8 +58,6 @@ When enabled, the RGD creates Argo CD `Application` resources in the management 
 
 Examples are intentionally not under `platform/crd/`, so Argo CD does not auto-create demo clusters during sync.
 
-`controlPlaneAcl.addresses.ipv4` and `controlPlaneAcl.addresses.ipv6` must be present in current examples. Use empty arrays when ACLs are disabled.
-
 - `platform/examples/dev-cluster.yaml`
 - `platform/examples/staging-cluster.yaml`
 - `platform/examples/prod-cluster.yaml`

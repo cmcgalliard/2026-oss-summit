@@ -18,11 +18,6 @@ spec:
     labels:
       environment: dev
       team: platform-team
-    controlPlaneAcl:
-      enabled: false
-      addresses:
-        ipv4: []
-        ipv6: []
   components:
     o11yStack:
       enabled: true

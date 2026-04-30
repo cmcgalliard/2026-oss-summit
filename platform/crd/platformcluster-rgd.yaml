@@ -12,11 +12,6 @@ spec:
         clusterName: string | required=true
         region: string | default="us-ord"
         kubernetesVersion: string | default="1.35"
-        controlPlaneAcl:
-          enabled: boolean | default=false
-          addresses:
-            ipv4: "[]string"
-            ipv6: "[]string"
         nodePool:
           count: integer | default=3
           type: string | default="g6-standard-6"
@@ -54,12 +49,6 @@ spec:
             label: ${schema.spec.clusterSpec.clusterName}
             region: ${schema.spec.clusterSpec.region}
             k8sVersion: ${schema.spec.clusterSpec.kubernetesVersion}
-            controlPlane:
-              - acl:
-                  - enabled: ${schema.spec.clusterSpec.controlPlaneAcl.enabled}
-                    addresses:
-                      - ipv4: ${schema.spec.clusterSpec.controlPlaneAcl.addresses.ipv4}
-                        ipv6: ${schema.spec.clusterSpec.controlPlaneAcl.addresses.ipv6}
             tags:
               - "environment:${schema.spec.clusterSpec.labels.environment}"
               - "team:${schema.spec.clusterSpec.labels.team}"
