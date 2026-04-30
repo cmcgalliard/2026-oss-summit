@@ -46,9 +46,9 @@ resources:
     source_workload: hello-world
     provisioner: template://default-provisioners/dns
     state:
-      instanceHostname: dnskumwsd.localhost
+      instanceHostname: dnskumwsd.ossdemo.soupcan.io
     outputs:
-      host: dnskumwsd.localhost
+      host: dnskumwsd.ossdemo.soupcan.io
   postgres.default#hello-world.db:
     guid: 348c277b-7e34-4d98-87cc-5a29d1108dcd
     type: postgres

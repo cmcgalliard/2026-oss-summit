@@ -172,7 +172,7 @@ Validate all committed workloads:
 bash platform/scripts/check-score-app.sh
 ```
 
-The sample implementation in this repo is `platform/workloads/apps/demo-app/`.
+The sample implementation in this repo is `platform/workloads/apps/demo-app/`. Its default Score `dns` resource renders under `*.ossdemo.soupcan.io` so generated `HTTPRoute` hostnames are compatible with the repo's external-dns setup.
 
 Out of scope for this MVP:
 

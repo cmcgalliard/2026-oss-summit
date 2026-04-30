@@ -121,13 +121,12 @@
   expected_outputs:
     - source
 
-# The default dns provisioner just outputs a random localhost domain because we don't know whether external-dns is
-# available. You should replace this with your own dns name generation that matches your external-dns controller.
+# The default dns provisioner outputs a random hostname under the external-dns managed platform domain.
 - uri: template://default-provisioners/dns
   type: dns
-  description: Outputs a *.localhost domain as the hostname.
+  description: Outputs a *.ossdemo.soupcan.io domain as the hostname.
   init: |
-    randomHostname: dns{{ randAlphaNum 6 | lower }}.localhost
+    randomHostname: dns{{ randAlphaNum 6 | lower }}.ossdemo.soupcan.io
   state: |
     instanceHostname: {{ dig "instanceHostname" .Init.randomHostname .State | quote }}
   outputs: |
