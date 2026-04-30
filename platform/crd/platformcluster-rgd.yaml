@@ -445,6 +445,8 @@ spec:
               values: |
                 config:
                   sessionTTL: null
+                service:
+                  type: LoadBalancer
           destination:
             server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
             namespace: headlamp
