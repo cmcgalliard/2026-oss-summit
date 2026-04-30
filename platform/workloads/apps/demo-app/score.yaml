@@ -1,15 +1,22 @@
 apiVersion: score.dev/v1b1
 metadata:
-  name: nginx
+  name: hello-world
+  annotations:
+    tags: "nodejs,http,website,javascript,postgres"
 containers:
-  webapp:
+  hello-world:
     image: scorespec/sample-score-app:latest
-service:
-  ports:
-    tcp:
-      port: 80
-      targetPort: 8080
+    variables:
+      PORT: "3000"
+      MESSAGE: "Hello, World!"
+      DB_DATABASE: ${resources.db.name}
+      DB_USER: ${resources.db.username}
+      DB_PASSWORD: ${resources.db.password}
+      DB_HOST: ${resources.db.host}
+      DB_PORT: ${resources.db.port}
 resources:
+  db:
+    type: postgres
   dns:
     type: dns
   route:
@@ -17,4 +24,10 @@ resources:
     params:
       host: ${resources.dns.host}
       path: /
-      port: 80
+      port: 8080
+service:
+  ports:
+    www:
+      port: 8080
+      targetPort: 3000
+
