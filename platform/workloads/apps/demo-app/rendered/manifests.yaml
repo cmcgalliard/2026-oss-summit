@@ -141,7 +141,7 @@ spec:
         app.kubernetes.io/name: nginx
     spec:
       containers:
-        - image: nginxinc/nginx-unprivileged:alpine-slim
+        - image: scorespec/sample-score-app:latest
           name: webapp
           resources: {}
 status: {}

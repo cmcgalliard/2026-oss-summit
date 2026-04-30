@@ -3,7 +3,7 @@ metadata:
   name: nginx
 containers:
   webapp:
-    image: nginxinc/nginx-unprivileged:alpine-slim
+    image: scorespec/sample-score-app:latest
 service:
   ports:
     tcp:
