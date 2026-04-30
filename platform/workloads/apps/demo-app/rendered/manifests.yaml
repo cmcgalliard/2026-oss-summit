@@ -1,4 +1,31 @@
 ---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  annotations:
+    k8s.score.dev/resource-guid: 39023dfc-871d-4acd-69c7-d2d26b1c1d95
+    k8s.score.dev/resource-uid: route.default#nginx.route
+    k8s.score.dev/source-workload: nginx
+  labels:
+    app.kubernetes.io/instance: route-nginx-39023dfc
+    app.kubernetes.io/managed-by: score-k8s
+    app.kubernetes.io/name: route-nginx-39023dfc
+  name: route-nginx-39023dfc
+  namespace: demo-app
+spec:
+  hostnames:
+    - dns2qseev.localhost
+  parentRefs:
+    - name: default
+  rules:
+    - backendRefs:
+        - name: nginx
+          port: 80
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -64,4 +91,57 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    k8s.score.dev/workload-name: nginx
+  labels:
+    app.kubernetes.io/instance: nginx-7926ec64af
+    app.kubernetes.io/managed-by: score-k8s
+    app.kubernetes.io/name: nginx
+  name: nginx
+  namespace: demo-app
+spec:
+  ports:
+    - name: tcp
+      port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    app.kubernetes.io/instance: nginx-7926ec64af
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    k8s.score.dev/workload-name: nginx
+  labels:
+    app.kubernetes.io/instance: nginx-7926ec64af
+    app.kubernetes.io/managed-by: score-k8s
+    app.kubernetes.io/name: nginx
+  name: nginx
+  namespace: demo-app
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: nginx-7926ec64af
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        k8s.score.dev/workload-name: nginx
+      labels:
+        app.kubernetes.io/instance: nginx-7926ec64af
+        app.kubernetes.io/managed-by: score-k8s
+        app.kubernetes.io/name: nginx
+    spec:
+      containers:
+        - image: nginxinc/nginx-unprivileged:alpine-slim
+          name: webapp
+          resources: {}
 status: {}

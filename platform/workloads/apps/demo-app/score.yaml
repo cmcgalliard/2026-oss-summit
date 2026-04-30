@@ -1,28 +1,21 @@
 apiVersion: score.dev/v1b1
 metadata:
-  name: demo-app
-
+  name: nginx
 containers:
-  demo-app:
-    image: nginx:1.27
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        cpu: 250m
-        memory: 256Mi
-    livenessProbe:
-      httpGet:
-        path: /
-        port: 80
-    readinessProbe:
-      httpGet:
-        path: /
-        port: 80
-
+  webapp:
+    image: nginxinc/nginx-unprivileged:alpine-slim
 service:
   ports:
-    http:
+    tcp:
       port: 80
       targetPort: 80
+resources:
+  dns:
+    type: dns
+  route:
+    type: route
+    params:
+      host: ${resources.dns.host}
+      path: /
+      port: 80
+
