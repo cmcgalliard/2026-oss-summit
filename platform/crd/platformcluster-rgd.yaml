@@ -201,7 +201,7 @@ spec:
                             echo "Timed out waiting for secret $secret_namespace/$secret_name" >&2
                             exit 1
                           fi
-                          echo "  secret $secret_namespace/$secret_name not found yet, retrying in ${RETRY_INTERVAL}s..." >&2
+                          echo "  secret $secret_namespace/$secret_name not found yet, retrying in $RETRY_INTERVALs..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -231,7 +231,7 @@ spec:
                             kubectl get secret "$secret_name" -n argocd -o go-template='{{range $k, $_ := .data}}{{printf "%s\n" $k}}{{end}}' >&2
                             exit 1
                           fi
-                          echo "  kubeconfig data missing from secret argocd/$secret_name, retrying in ${RETRY_INTERVAL}s..." >&2
+                          echo "  kubeconfig data missing from secret argocd/$secret_name, retrying in $RETRY_INTERVALs..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -627,7 +627,7 @@ spec:
                             echo "Timed out waiting for secret $secret_namespace/$secret_name" >&2
                             exit 1
                           fi
-                          echo "  secret $secret_namespace/$secret_name not found yet, retrying in ${RETRY_INTERVAL}s..." >&2
+                          echo "  secret $secret_namespace/$secret_name not found yet, retrying in $RETRY_INTERVALs..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -652,7 +652,7 @@ spec:
                             echo "Timed out waiting for kubeconfig data in secret argocd/$secret_name" >&2
                             exit 1
                           fi
-                          echo "  kubeconfig data missing from secret argocd/$secret_name, retrying in ${RETRY_INTERVAL}s..." >&2
+                          echo "  kubeconfig data missing from secret argocd/$secret_name, retrying in $RETRY_INTERVALs..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -665,7 +665,7 @@ spec:
                             echo "Timed out waiting for child cluster API to become ready" >&2
                             exit 1
                           fi
-                          echo "  child cluster API not ready yet, retrying in ${RETRY_INTERVAL}s..." >&2
+                          echo "  child cluster API not ready yet, retrying in $RETRY_INTERVALs..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -680,7 +680,7 @@ spec:
                             echo "Timed out waiting for service account $service_account_namespace/$service_account_name" >&2
                             exit 1
                           fi
-                          echo "  service account $service_account_namespace/$service_account_name not found yet, retrying in ${RETRY_INTERVAL}s..." >&2
+                          echo "  service account $service_account_namespace/$service_account_name not found yet, retrying in $RETRY_INTERVALs..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
@@ -702,7 +702,7 @@ spec:
                             echo "Timed out waiting for token data in secret $secret_namespace/$secret_name" >&2
                             exit 1
                           fi
-                          echo "  token data missing from secret $secret_namespace/$secret_name, retrying in ${RETRY_INTERVAL}s..." >&2
+                          echo "  token data missing from secret $secret_namespace/$secret_name, retrying in $RETRY_INTERVALs..." >&2
                           sleep "$RETRY_INTERVAL"
                           attempt=$((attempt + 1))
                         done
