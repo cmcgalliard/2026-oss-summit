@@ -144,7 +144,7 @@ metadata:
   namespace: demo-app-switcharoo
 spec:
   hostnames:
-    - demo-app-switcharoo.oss.baby
+    - demo2.oss.baby
   parentRefs:
     - name: default
   rules:

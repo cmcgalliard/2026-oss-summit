@@ -22,7 +22,7 @@ workloads:
           type: postgres
         route:
           params:
-            host: demo-app-switcharoo.oss.baby
+            host: demo2.oss.baby
             path: /
             port: 8080
           type: route
@@ -75,7 +75,7 @@ resources:
     id: hello-world.route
     metadata: {}
     params:
-      host: demo-app-switcharoo.oss.baby
+      host: demo2.oss.baby
       path: /
       port: 8080
     source_workload: hello-world
