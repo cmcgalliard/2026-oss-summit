@@ -5,6 +5,11 @@ vim platform/examples/demo-cluster.yaml
 vim platform/crd/platformcluster-rgd.yaml
 ```
 
+- Deals with dependencies and ordering of resources.
+- Provides a clear schema
+- Has templating that lets consume not only variables from the spec but also from the status of the cluster and its components.
+  - `lkeCluster.status.atProvider.apiEndpoints`
+
 ```
 vim platform/workloads/apps/demo-app/score.yaml
 ls -l platform/workloads/apps/demo-app/rendered/

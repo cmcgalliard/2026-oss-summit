@@ -21,9 +21,9 @@ spec:
   components:
     gatewayFabric:
       enabled: true
-    userApps:
-      enabled:
-        - demo-app
+    # userApps:
+    #   enabled:
+    #     - demo-app
     o11yStack:
       enabled: false
       loki: true
