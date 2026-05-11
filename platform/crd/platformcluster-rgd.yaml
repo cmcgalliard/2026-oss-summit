@@ -621,7 +621,6 @@ spec:
     - id: externalDnsApp
       includeWhen:
         - ${schema.spec.components.gatewayFabric.enabled}
-        - ${externalDnsTokenJob.status.succeeded == 1}
       template:
         apiVersion: argoproj.io/v1alpha1
         kind: Application
