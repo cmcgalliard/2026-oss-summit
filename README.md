@@ -29,6 +29,7 @@ platform/
   apps/         Argo CD Application manifests
   bootstrap/    One-time cluster bootstrap assets
   cert-manager/ ClusterIssuer manifests
+  clusters/     GitOps-managed PlatformCluster manifests
   crd/          Synced KRO ResourceGraphDefinitions
   crossplane/   Provider and provider config manifests
   examples/     Manual-only PlatformCluster examples
@@ -88,20 +89,25 @@ Wave 2: traefik, crossplane-providers
 Wave 3: kro, o11y, external-dns, workload apps
 Wave 4: cert-manager-issuers
 Wave 5: platform-crd
+Wave 6: platform-clusters
 ```
 
 `platform-crd` syncs `platform/crd/platformcluster-rgd.yaml` into `kro-system` after KRO is already present.
 
 ## PlatformCluster
 
-The app-of-apps bootstrap only watches `platform/apps/`, so the live `PlatformCluster` `ResourceGraphDefinition` is stored in `platform/crd/` and reconciled by `platform/apps/platform-crd.yaml`.
+The app-of-apps bootstrap only watches `platform/apps/`, so the live `PlatformCluster` `ResourceGraphDefinition` is stored in `platform/crd/` and reconciled by `platform/apps/platform-crd.yaml`. Live `PlatformCluster` instances are reconciled separately by `platform/apps/platform-clusters.yaml`, which watches `platform/clusters/`.
 
-Example `PlatformCluster` manifests live under `platform/examples/` and are applied manually so Argo CD does not auto-create demo clusters:
+Keep sample manifests under `platform/examples/`. Commit live cluster manifests under `platform/clusters/` so Argo CD provisions them automatically:
 
 ```bash
 kubectl get application platform-crd -n argocd
+kubectl get application platform-clusters -n argocd
 kubectl explain platformcluster
-kubectl apply -f platform/examples/dev-cluster.yaml
+cp platform/examples/dev-cluster.yaml platform/clusters/dev-cluster.yaml
+git add platform/clusters/dev-cluster.yaml
+git commit -m "Add dev PlatformCluster"
+git push
 ```
 
 See `platform/README.md` for the schema, prerequisites, and usage flow.

@@ -15,13 +15,14 @@
 ```text
 platform/
   apps/      Argo CD Application manifests, including platform-crd
+  clusters/  GitOps-managed PlatformCluster manifests
   crd/       Synced KRO ResourceGraphDefinitions
   examples/  Manual-only PlatformCluster examples
   scripts/   Score workload helper scripts
   workloads/ Shared Score source and rendered manifests
 ```
 
-`platform/bootstrap/app-of-apps.yaml` only reconciles `platform/apps/`, so the live RGD lives under `platform/crd/` and is pulled in through `platform/apps/platform-crd.yaml`.
+`platform/bootstrap/app-of-apps.yaml` only reconciles `platform/apps/`, so the live RGD lives under `platform/crd/` and is pulled in through `platform/apps/platform-crd.yaml`. `platform/apps/platform-clusters.yaml` then reconciles the live `PlatformCluster` objects committed under `platform/clusters/`.
 
 `platform/crd/platformcluster-kro-rbac.yaml` and `platform/crd/platformcluster-kro-rbac-secrets.yaml` aggregate the extra controller permissions KRO needs in `rbac.mode=aggregation` to watch `PlatformCluster` instances and manage the resources declared by the graph.
 
@@ -29,6 +30,7 @@ platform/
 
 - Wave 3: `kro`
 - Wave 5: `platform-crd`
+- Wave 6: `platform-clusters`
 
 The extra gap leaves KRO time to register its APIs before Argo CD applies `platform/crd/platformcluster-rgd.yaml`.
 
@@ -37,13 +39,17 @@ The extra gap leaves KRO time to register its APIs before Argo CD applies `platf
 1. Bootstrap the management cluster so Argo CD starts reconciling `platform/apps/`.
 2. Wait for the `platform-crd` application to sync.
 3. Confirm the `PlatformCluster` CRD exists.
-4. Apply one of the examples manually.
+4. Copy an example into `platform/clusters/`, commit it, and push.
 
 ```bash
 kubectl get application platform-crd -n argocd
+kubectl get application platform-clusters -n argocd
 kubectl get resourcegraphdefinitions.kro.run
 kubectl explain platformcluster
-kubectl apply -f platform/examples/dev-cluster.yaml
+cp platform/examples/dev-cluster.yaml platform/clusters/dev-cluster.yaml
+git add platform/clusters/dev-cluster.yaml
+git commit -m "Add dev PlatformCluster"
+git push
 ```
 
 ## Component Model
@@ -70,13 +76,21 @@ kubectl get secret <clusterName>-headlamp-token -n <platformClusterNamespace> \
 
 ## Examples
 
-Examples are intentionally not under `platform/crd/`, so Argo CD does not auto-create demo clusters during sync.
+Examples are intentionally not under `platform/clusters/`, so Argo CD does not auto-create demo clusters during sync.
 
 - `platform/examples/dev-cluster.yaml`
 - `platform/examples/staging-cluster.yaml`
 - `platform/examples/prod-cluster.yaml`
 
-Apply them manually when you want to test or provision a cluster.
+Use them as templates for manifests committed under `platform/clusters/`.
+
+## GitOps Flow
+
+`platform/apps/platform-clusters.yaml` reconciles `platform/clusters/` after the `PlatformCluster` CRD is already present.
+
+- Commit one manifest per cluster, for example `platform/clusters/dev-cluster.yaml`
+- Set `metadata.name`, `metadata.namespace`, and `spec.clusterSpec.clusterName` explicitly
+- Push the change so Argo CD creates or updates the `PlatformCluster`
 
 ## User Workloads
 
