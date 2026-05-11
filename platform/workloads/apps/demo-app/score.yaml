@@ -22,7 +22,7 @@ resources:
   route:
     type: route
     params:
-      host: ${resources.dns.host}
+      host: demo.oss.baby
       path: /
       port: 8080
 service:
