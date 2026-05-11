@@ -20,7 +20,7 @@ resources:
   route:
     type: route
     params:
-      host: demo-app-switcharoo.oss.baby
+      host: demo2.oss.baby
       path: /
       port: 8080
 service:
