@@ -250,8 +250,13 @@ spec:
                       write_kubeconfig_file() {
                         local secret_name="$1"
                         local kubeconfig_b64=""
+                        local tmp_kubeconfig="/tmp/lke-kubeconfig.tmp"
                         kubeconfig_b64=$(wait_for_kubeconfig_data "$secret_name")
-                        printf '%s' "$kubeconfig_b64" | base64 -d > /tmp/lke-kubeconfig
+                        if ! printf '%s' "$kubeconfig_b64" | base64 -d > "$tmp_kubeconfig" 2> /dev/null; then
+                          rm -f "$tmp_kubeconfig"
+                          return 1
+                        fi
+                        mv "$tmp_kubeconfig" /tmp/lke-kubeconfig
                       }
 
                       wait_for_usable_kubeconfig() {
@@ -263,7 +268,17 @@ spec:
                         local key_data=""
 
                         while true; do
-                          write_kubeconfig_file "$secret_name"
+                          if ! write_kubeconfig_file "$secret_name"; then
+                            if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                              echo "Timed out waiting for valid base64 kubeconfig data in secret argocd/$secret_name" >&2
+                              exit 1
+                            fi
+
+                            echo "  kubeconfig in argocd/$secret_name is not valid base64 yet, retrying in $RETRY_INTERVAL""s..." >&2
+                            sleep "$RETRY_INTERVAL"
+                            attempt=$((attempt + 1))
+                            continue
+                          fi
 
                           server=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
                             -o jsonpath='{.clusters[0].cluster.server}' 2> /dev/null || true)
@@ -538,8 +553,13 @@ spec:
                       write_kubeconfig_file() {
                         local secret_name="$1"
                         local kubeconfig_b64=""
+                        local tmp_kubeconfig="/tmp/lke-kubeconfig.tmp"
                         kubeconfig_b64=$(wait_for_kubeconfig_data "$secret_name")
-                        printf '%s' "$kubeconfig_b64" | base64 -d > /tmp/lke-kubeconfig
+                        if ! printf '%s' "$kubeconfig_b64" | base64 -d > "$tmp_kubeconfig" 2> /dev/null; then
+                          rm -f "$tmp_kubeconfig"
+                          return 1
+                        fi
+                        mv "$tmp_kubeconfig" /tmp/lke-kubeconfig
                       }
 
                       wait_for_usable_kubeconfig() {
@@ -551,7 +571,17 @@ spec:
                         local key_data=""
 
                         while true; do
-                          write_kubeconfig_file "$secret_name"
+                          if ! write_kubeconfig_file "$secret_name"; then
+                            if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                              echo "Timed out waiting for valid base64 kubeconfig data in secret argocd/$secret_name" >&2
+                              exit 1
+                            fi
+
+                            echo "  kubeconfig in argocd/$secret_name is not valid base64 yet, retrying in $RETRY_INTERVAL""s..." >&2
+                            sleep "$RETRY_INTERVAL"
+                            attempt=$((attempt + 1))
+                            continue
+                          fi
 
                           server=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
                             -o jsonpath='{.clusters[0].cluster.server}' 2> /dev/null || true)
@@ -1090,8 +1120,13 @@ spec:
                       write_kubeconfig_file() {
                         local secret_name="$1"
                         local kubeconfig_b64=""
+                        local tmp_kubeconfig="/tmp/lke-kubeconfig.tmp"
                         kubeconfig_b64=$(wait_for_kubeconfig_data "$secret_name")
-                        printf '%s' "$kubeconfig_b64" | base64 -d > /tmp/lke-kubeconfig
+                        if ! printf '%s' "$kubeconfig_b64" | base64 -d > "$tmp_kubeconfig" 2> /dev/null; then
+                          rm -f "$tmp_kubeconfig"
+                          return 1
+                        fi
+                        mv "$tmp_kubeconfig" /tmp/lke-kubeconfig
                       }
 
                       wait_for_usable_kubeconfig() {
@@ -1103,7 +1138,17 @@ spec:
                         local key_data=""
 
                         while true; do
-                          write_kubeconfig_file "$secret_name"
+                          if ! write_kubeconfig_file "$secret_name"; then
+                            if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                              echo "Timed out waiting for valid base64 kubeconfig data in secret argocd/$secret_name" >&2
+                              exit 1
+                            fi
+
+                            echo "  kubeconfig in argocd/$secret_name is not valid base64 yet, retrying in $RETRY_INTERVAL""s..." >&2
+                            sleep "$RETRY_INTERVAL"
+                            attempt=$((attempt + 1))
+                            continue
+                          fi
 
                           server=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
                             -o jsonpath='{.clusters[0].cluster.server}' 2> /dev/null || true)
