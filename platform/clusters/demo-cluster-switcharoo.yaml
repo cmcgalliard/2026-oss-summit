@@ -23,7 +23,7 @@ spec:
       enabled: true
     userApps:
       enabled:
-        - demo-app
+        - demo-app-switcharoo
     o11yStack:
       enabled: false
       loki: true

@@ -1,0 +1,88 @@
+workloads:
+  hello-world:
+    spec:
+      apiVersion: score.dev/v1b1
+      containers:
+        hello-world:
+          image: scorespec/sample-score-app:latest
+          variables:
+            DB_DATABASE: ${resources.db.name}
+            DB_HOST: ${resources.db.host}
+            DB_PASSWORD: ${resources.db.password}
+            DB_PORT: ${resources.db.port}
+            DB_USER: ${resources.db.username}
+            MESSAGE: Hello, World!
+            PORT: "3000"
+      metadata:
+        annotations:
+          tags: nodejs,http,website,javascript,postgres
+        name: hello-world
+      resources:
+        db:
+          type: postgres
+        dns:
+          type: dns
+        route:
+          params:
+            host: ${resources.dns.host}
+            path: /
+            port: 8080
+          type: route
+      service:
+        ports:
+          www:
+            port: 8080
+            targetPort: 3000
+    file: score.yaml
+    instance_suffix: -83fb804a1c
+resources:
+  dns.default#hello-world.dns:
+    guid: 90c8eae9-7355-4ae5-dba6-98e122a30c44
+    type: dns
+    class: default
+    id: hello-world.dns
+    metadata: {}
+    params: {}
+    source_workload: hello-world
+    provisioner: template://default-provisioners/dns
+    state:
+      instanceHostname: dnsayzaue.localhost
+    outputs:
+      host: dnsayzaue.localhost
+  postgres.default#hello-world.db:
+    guid: 6263d0b4-3a36-4639-e5b4-f4dd66bd05c7
+    type: postgres
+    class: default
+    id: hello-world.db
+    metadata: {}
+    params: {}
+    source_workload: hello-world
+    provisioner: template://default-provisioners/postgres
+    state:
+      database: db-zKzPagbX
+      password: gIsQ9CJhVWAGrKmx
+      service: pg-hello-world-6263d0b4
+      username: user-WcHOEJdj
+    outputs:
+      database: db-zKzPagbX
+      host: pg-hello-world-6263d0b4
+      name: db-zKzPagbX
+      password: "\U0001F510\U0001F4ACpg-hello-world-6263d0b4_password\U0001F4AC\U0001F510"
+      port: 5432
+      username: user-WcHOEJdj
+  route.default#hello-world.route:
+    guid: af8d383e-7a27-4c77-9257-78e447d463bf
+    type: route
+    class: default
+    id: hello-world.route
+    metadata: {}
+    params:
+      host: ${resources.dns.host}
+      path: /
+      port: 8080
+    source_workload: hello-world
+    provisioner: template://default-provisioners/route
+    state:
+      routeName: route-hello-world-af8d383e
+shared_state: {}
+patching_templates: []
