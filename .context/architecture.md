@@ -15,7 +15,7 @@
 - ArgoCD is the GitOps controller tracking this repo
 - All platform services are declarative ArgoCD Applications
 - Repo is source of truth; cluster state reconciles to git state
-- Branch: `try-three` (tracked by all ArgoCD Applications)
+- Branch: `main` (tracked by all ArgoCD Applications)
 - App of Apps: `platform/bootstrap/app-of-apps.yaml` watches `platform/apps/` — adding a file there auto-creates the app
 
 ### Installation Bootstrap Order
@@ -42,7 +42,7 @@ sources:
     helm:
       valueFiles: [$values/platform/helm/<service>/values.yaml]
   - repoURL: https://github.com/cmcgalliard/2026-oss-summit.git
-    targetRevision: try-three
+    targetRevision: main
     ref: values
 ```
 
@@ -128,7 +128,7 @@ sources:
 - Sync wave: 3
 
 ## Next Steps (user-guided)
-1. Apply changes to cluster via git push to `try-three` (ArgoCD auto-syncs)
+1. Apply changes to cluster via git push to `main` (ArgoCD auto-syncs)
 2. Monitor: `kubectl get applications -A`
 3. Verify Traefik LoadBalancer IP: `kubectl get svc -n traefik`
 4. Verify external-dns is managing oss.baby records
