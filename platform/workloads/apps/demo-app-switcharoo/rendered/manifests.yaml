@@ -132,6 +132,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   annotations:
+    external-dns.alpha.kubernetes.io/ttl: "30"
     k8s.score.dev/resource-guid: af8d383e-7a27-4c77-9257-78e447d463bf
     k8s.score.dev/resource-uid: route.default#hello-world.route
     k8s.score.dev/source-workload: hello-world

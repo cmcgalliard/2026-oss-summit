@@ -158,6 +158,7 @@
         namespace: {{ .Namespace }}
         {{ end }}
         annotations:
+          external-dns.alpha.kubernetes.io/ttl: "30"
           k8s.score.dev/source-workload: {{ .SourceWorkload }}
           k8s.score.dev/resource-uid: {{ .Uid }}
           k8s.score.dev/resource-guid: {{ .Guid }}
