@@ -93,7 +93,7 @@ sources:
 - Chart: external-dns v1.19.0
 - Namespace: external-dns
 - Provider: linode
-- Domain filter: ossdemo.soupcan.io
+- Domain filter: oss.baby
 - Token secret: `linode-token` in external-dns namespace
 - Sync wave: 3
 
@@ -131,7 +131,7 @@ sources:
 1. Apply changes to cluster via git push to `try-three` (ArgoCD auto-syncs)
 2. Monitor: `kubectl get applications -A`
 3. Verify Traefik LoadBalancer IP: `kubectl get svc -n traefik`
-4. Verify external-dns is managing ossdemo.soupcan.io records
+4. Verify external-dns is managing oss.baby records
 5. Test cert-manager: `kubectl get clusterissuers`
 6. Composite resources with Crossplane for LKE provisioning
 7. KRO ResourceGraphs for higher-level platform abstractions

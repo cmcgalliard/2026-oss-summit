@@ -143,7 +143,7 @@ metadata:
   namespace: demo-app
 spec:
   hostnames:
-    - dnskumwsd.ossdemo.soupcan.io
+    - dnskumwsd.oss.baby
   parentRefs:
     - name: default
   rules:

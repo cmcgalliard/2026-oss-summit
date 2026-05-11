@@ -23,7 +23,7 @@ sources:
   - ingress
 
 domainFilters:
-  - ossdemo.soupcan.io
+  - oss.baby
 
 policy: upsert-only
 

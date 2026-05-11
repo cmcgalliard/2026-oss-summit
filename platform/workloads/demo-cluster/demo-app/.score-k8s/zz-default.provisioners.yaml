@@ -124,9 +124,9 @@
 # The default dns provisioner outputs a random hostname under the external-dns managed platform domain.
 - uri: template://default-provisioners/dns
   type: dns
-  description: Outputs a *.ossdemo.soupcan.io domain as the hostname.
+  description: Outputs a *.oss.baby domain as the hostname.
   init: |
-    randomHostname: dns{{ randAlphaNum 6 | lower }}.ossdemo.soupcan.io
+    randomHostname: dns{{ randAlphaNum 6 | lower }}.oss.baby
   state: |
     instanceHostname: {{ dig "instanceHostname" .Init.randomHostname .State | quote }}
   outputs: |

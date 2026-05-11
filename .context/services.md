@@ -56,7 +56,7 @@
 - **ArgoCD App**: `platform/apps/external-dns.yaml`
 - **Sync Wave**: 3
 - **Provider**: `linode`
-- **Domain filter**: `ossdemo.soupcan.io`
+- **Domain filter**: `oss.baby`
 - **Credentials**: `linode-token` Secret in `external-dns` namespace (key: `token`)
 - **Policy**: `upsert-only` (safe — never deletes DNS records)
 - **TXT owner**: `lke-oss-summit`

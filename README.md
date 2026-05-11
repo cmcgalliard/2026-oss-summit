@@ -15,7 +15,7 @@ GitOps-managed platform for an Akamai Cloud Linode Kubernetes Engine cluster. Th
 - `Argo CD`: GitOps controller and app-of-apps entrypoint
 - `cert-manager`: Let's Encrypt certificate management
 - `Traefik`: default ingress controller exposed as `LoadBalancer`
-- `external-dns`: Linode DNS automation for `ossdemo.soupcan.io`
+- `external-dns`: Linode DNS automation for `oss.baby`
 - `Crossplane`: infrastructure provisioning, including Linode provider support
 - `Grafana`, `Loki`, `Tempo`: observability stack
 - `KRO`: Kubernetes Resource Orchestrator
@@ -178,7 +178,7 @@ Validate all committed workloads:
 bash platform/scripts/check-score-app.sh
 ```
 
-The sample implementation in this repo is `platform/workloads/apps/demo-app/`. Its default Score `dns` resource renders under `*.ossdemo.soupcan.io` so generated `HTTPRoute` hostnames are compatible with the repo's external-dns setup.
+The sample implementation in this repo is `platform/workloads/apps/demo-app/`. Its default Score `dns` resource renders under `*.oss.baby` so generated `HTTPRoute` hostnames are compatible with the repo's external-dns setup.
 
 Out of scope for this MVP:
 

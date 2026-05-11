@@ -28,7 +28,7 @@ spec:
           - service
           - ingress
         domainFilters:
-          - ossdemo.soupcan.io
+          - oss.baby
         policy: upsert-only
         interval: 1m
         registry: txt
