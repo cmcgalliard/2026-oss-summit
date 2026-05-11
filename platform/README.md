@@ -61,6 +61,8 @@ The `PlatformCluster` schema exposes these built-in components:
 - `harbor`
 - `headlamp`
 
+When `gatewayFabric` is enabled, the graph also installs `external-dns` into the child cluster automatically. That child-cluster instance watches `HTTPRoute` resources and publishes `oss.baby` records to Linode using the management cluster's bootstrap `linode-token` secret.
+
 When enabled, the RGD creates Argo CD `Application` resources in the management cluster's `argocd` namespace and points each application's `spec.destination.server` at the new LKE cluster endpoint.
 
 The cluster registration job also creates an Argo CD cluster secret with `stringData.name: <clusterName>`. User workload applications can target that registered child cluster with `spec.destination.name: <clusterName>` instead of hard-coding the API server URL.
@@ -120,7 +122,7 @@ Rules:
 - `gateway.yaml` creates a demo `Gateway` named `default` in the app namespace
 - app names are repo-global and reusable across clusters
 
-If a Score workload renders `HTTPRoute` resources, enable `spec.components.gatewayFabric.enabled` on the target `PlatformCluster` so the child cluster has Gateway API CRDs and a demo Traefik-based Gateway API controller.
+If a Score workload renders `HTTPRoute` resources, enable `spec.components.gatewayFabric.enabled` on the target `PlatformCluster` so the child cluster has Gateway API CRDs, a demo Traefik-based Gateway API controller, and automatic `external-dns` publishing for route hostnames under `oss.baby`.
 
 Helper scripts:
 
@@ -140,4 +142,4 @@ Delete flow:
 
 Set `spec.components.userApps.enabled` to the exact app names that should be deployed to the cluster.
 
-This flow deploys workloads onto an existing child cluster. For the demo path, it can also provision per-app `Gateway` resources when `gatewayFabric` is enabled on the target cluster. The current demo implementation uses Traefik as the Gateway API controller. Shared ingress, DNS, and TLS policy remain out of scope.
+This flow deploys workloads onto an existing child cluster. For the demo path, it can also provision per-app `Gateway` resources when `gatewayFabric` is enabled on the target cluster. The current demo implementation uses Traefik as the Gateway API controller, and `PlatformCluster` also installs a child-cluster `external-dns` instance so `HTTPRoute` hostnames under `oss.baby` publish to Linode automatically. Shared TLS policy remains out of scope.

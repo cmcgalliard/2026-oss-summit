@@ -160,6 +160,39 @@ spec:
           name: "${schema.spec.clusterSpec.clusterName}-platformcluster-publish"
           apiGroup: rbac.authorization.k8s.io
 
+    - id: externalDnsTokenRole
+      includeWhen:
+        - ${schema.spec.components.gatewayFabric.enabled}
+      template:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: Role
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-external-dns-token"
+          namespace: external-dns
+        rules:
+          - apiGroups: [""]
+            resources: ["secrets"]
+            resourceNames: ["linode-token"]
+            verbs: ["get"]
+
+    - id: externalDnsTokenRoleBinding
+      includeWhen:
+        - ${schema.spec.components.gatewayFabric.enabled}
+      template:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-external-dns-token"
+          namespace: external-dns
+        subjects:
+          - kind: ServiceAccount
+            name: "${schema.spec.clusterSpec.clusterName}-argocd-bootstrap"
+            namespace: argocd
+        roleRef:
+          kind: Role
+          name: "${schema.spec.clusterSpec.clusterName}-external-dns-token"
+          apiGroup: rbac.authorization.k8s.io
+
     - id: argocdRegisterJob
       readyWhen:
         - ${argocdRegisterJob.status.succeeded == 1}
@@ -419,6 +452,232 @@ spec:
           destination:
             server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
             namespace: nginx-gateway
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+            syncOptions:
+              - CreateNamespace=true
+
+    - id: externalDnsTokenJob
+      includeWhen:
+        - ${schema.spec.components.gatewayFabric.enabled}
+      readyWhen:
+        - ${externalDnsTokenJob.status.succeeded == 1}
+      template:
+        apiVersion: batch/v1
+        kind: Job
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-external-dns-token"
+          namespace: argocd
+          labels:
+            platform-cluster: ${schema.metadata.name}
+          annotations:
+            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+        spec:
+          backoffLimit: 5
+          activeDeadlineSeconds: 3600
+          template:
+            spec:
+              serviceAccountName: "${schema.spec.clusterSpec.clusterName}-argocd-bootstrap"
+              restartPolicy: OnFailure
+              containers:
+                - name: publish-token
+                  image: bitnami/kubectl:latest
+                  env:
+                    - name: CLUSTER_NAME
+                      value: "${schema.spec.clusterSpec.clusterName}"
+                  command: ["/bin/bash", "-c"]
+                  args:
+                    - |
+                      set -euo pipefail
+                      SOURCE_SECRET_NAME="$CLUSTER_NAME-kubeconfig"
+                      RETRY_INTERVAL=15
+                      MAX_ATTEMPTS=80
+
+                      wait_for_secret() {
+                        local secret_name="$1"
+                        local secret_namespace="$2"
+                        local attempt=1
+                        until kubectl get secret "$secret_name" -n "$secret_namespace" > /dev/null 2>&1; do
+                          if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                            echo "Timed out waiting for secret $secret_namespace/$secret_name" >&2
+                            exit 1
+                          fi
+                          echo "  secret $secret_namespace/$secret_name not found yet, retrying in $RETRY_INTERVAL""s..." >&2
+                          sleep "$RETRY_INTERVAL"
+                          attempt=$((attempt + 1))
+                        done
+                      }
+
+                      wait_for_kubeconfig_data() {
+                        local secret_name="$1"
+                        local attempt=1
+                        local kubeconfig_b64=""
+                        while [ -z "$kubeconfig_b64" ]; do
+                          kubeconfig_b64=$(kubectl get secret "$secret_name" -n argocd \
+                            -o go-template='{{index .data "kubeconfig"}}' 2> /dev/null || true)
+                          if [ -z "$kubeconfig_b64" ]; then
+                            kubeconfig_b64=$(kubectl get secret "$secret_name" -n argocd \
+                              -o go-template='{{index .data "attribute.kubeconfig"}}' 2> /dev/null || true)
+                          fi
+                          if [ -n "$kubeconfig_b64" ]; then
+                            printf '%s' "$kubeconfig_b64"
+                            return 0
+                          fi
+                          if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                            echo "Timed out waiting for kubeconfig data in secret argocd/$secret_name" >&2
+                            exit 1
+                          fi
+                          echo "  kubeconfig data missing from secret argocd/$secret_name, retrying in $RETRY_INTERVAL""s..." >&2
+                          sleep "$RETRY_INTERVAL"
+                          attempt=$((attempt + 1))
+                        done
+                      }
+
+                      write_kubeconfig_file() {
+                        local secret_name="$1"
+                        local kubeconfig_b64=""
+                        kubeconfig_b64=$(wait_for_kubeconfig_data "$secret_name")
+                        printf '%s' "$kubeconfig_b64" | base64 -d > /tmp/lke-kubeconfig
+                      }
+
+                      wait_for_usable_kubeconfig() {
+                        local secret_name="$1"
+                        local attempt=1
+                        local server=""
+                        local token=""
+                        local cert_data=""
+                        local key_data=""
+
+                        while true; do
+                          write_kubeconfig_file "$secret_name"
+
+                          server=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                            -o jsonpath='{.clusters[0].cluster.server}' 2> /dev/null || true)
+                          token=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                            -o jsonpath='{.users[0].user.token}' 2> /dev/null || true)
+                          cert_data=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                            -o jsonpath='{.users[0].user.client-certificate-data}' 2> /dev/null || true)
+                          key_data=$(KUBECONFIG=/tmp/lke-kubeconfig kubectl config view --raw \
+                            -o jsonpath='{.users[0].user.client-key-data}' 2> /dev/null || true)
+
+                          if [ -n "$server" ] && { [ -n "$token" ] || { [ -n "$cert_data" ] && [ -n "$key_data" ]; }; }; then
+                            return 0
+                          fi
+
+                          if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                            echo "Timed out waiting for usable kubeconfig data in secret argocd/$secret_name" >&2
+                            exit 1
+                          fi
+
+                          echo "  kubeconfig in argocd/$secret_name is not usable yet, retrying in $RETRY_INTERVAL""s..." >&2
+                          sleep "$RETRY_INTERVAL"
+                          attempt=$((attempt + 1))
+                        done
+                      }
+
+                      wait_for_cluster_api() {
+                        local attempt=1
+                        until KUBECONFIG=/tmp/lke-kubeconfig kubectl --request-timeout=10s get --raw=/readyz > /dev/null 2>&1; do
+                          if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                            echo "Timed out waiting for child cluster API to become ready" >&2
+                            exit 1
+                          fi
+                          echo "  child cluster API not ready yet, retrying in $RETRY_INTERVAL""s..." >&2
+                          sleep "$RETRY_INTERVAL"
+                          attempt=$((attempt + 1))
+                        done
+                      }
+
+                      wait_for_secret linode-token external-dns
+                      wait_for_secret "$SOURCE_SECRET_NAME" argocd
+                      wait_for_usable_kubeconfig "$SOURCE_SECRET_NAME"
+                      wait_for_cluster_api
+
+                      LINODE_TOKEN=$(kubectl get secret linode-token -n external-dns \
+                        -o go-template='{{index .data "token" | base64decode}}')
+
+                      KUBECONFIG=/tmp/lke-kubeconfig kubectl apply -f - <<EOF
+                      apiVersion: v1
+                      kind: Namespace
+                      metadata:
+                        name: external-dns
+                      EOF
+
+                      KUBECONFIG=/tmp/lke-kubeconfig kubectl apply -f - <<EOF
+                      apiVersion: v1
+                      kind: Secret
+                      metadata:
+                        name: linode-token
+                        namespace: external-dns
+                      type: Opaque
+                      stringData:
+                        token: "$LINODE_TOKEN"
+                      EOF
+
+                      rm -f /tmp/lke-kubeconfig
+
+    - id: externalDnsApp
+      includeWhen:
+        - ${schema.spec.components.gatewayFabric.enabled}
+        - ${externalDnsTokenJob.status.succeeded == 1}
+      template:
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: "${schema.spec.clusterSpec.clusterName}-external-dns"
+          namespace: argocd
+          annotations:
+            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
+            argocd.argoproj.io/sync-wave: "2"
+          finalizers:
+            - resources-finalizer.argocd.argoproj.io
+          labels:
+            platform-cluster: ${schema.metadata.name}
+            component: platform
+        spec:
+          project: default
+          source:
+            repoURL: https://kubernetes-sigs.github.io/external-dns/
+            chart: external-dns
+            targetRevision: "1.19.0"
+            helm:
+              releaseName: external-dns
+              valuesObject:
+                provider:
+                  name: linode
+                env:
+                  - name: LINODE_TOKEN
+                    valueFrom:
+                      secretKeyRef:
+                        name: linode-token
+                        key: token
+                sources:
+                  - gateway-httproute
+                domainFilters:
+                  - oss.baby
+                policy: upsert-only
+                interval: 1m
+                registry: txt
+                txtOwnerId: "lke-oss-summit-${schema.spec.clusterSpec.clusterName}"
+                rbac:
+                  create: true
+                serviceAccount:
+                  create: true
+                  name: external-dns
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                logLevel: info
+                logFormat: text
+          destination:
+            server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
+            namespace: external-dns
           syncPolicy:
             automated:
               prune: true

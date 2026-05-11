@@ -180,10 +180,12 @@ bash platform/scripts/check-score-app.sh
 
 The sample implementation in this repo is `platform/workloads/apps/demo-app/`. Its default Score `dns` resource renders under `*.oss.baby` so generated `HTTPRoute` hostnames are compatible with the repo's external-dns setup.
 
+When `spec.components.gatewayFabric.enabled: true` is set on a `PlatformCluster`, the graph also installs `external-dns` into that child cluster automatically. The child-cluster instance watches `HTTPRoute` resources and publishes matching `oss.baby` records to Linode.
+
 Out of scope for this MVP:
 
 - provisioning the child cluster itself
-- shared ingress, DNS, and TLS policy for app workloads beyond the per-app demo `Gateway`
+- shared ingress and TLS policy for app workloads beyond the per-app demo `Gateway`
 - arbitrary external infrastructure dependencies beyond what `score-k8s` can render locally
 
 ## Day-2 Changes
