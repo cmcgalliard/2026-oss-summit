@@ -17,12 +17,10 @@ containers:
 resources:
   db:
     type: postgres
-  dns:
-    type: dns
   route:
     type: route
     params:
-      host: ${resources.dns.host}
+      host: demo-app-switcharoo.oss.baby
       path: /
       port: 8080
 service:
