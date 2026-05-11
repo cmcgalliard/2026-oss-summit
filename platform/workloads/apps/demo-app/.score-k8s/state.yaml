@@ -24,7 +24,7 @@ workloads:
           type: dns
         route:
           params:
-            host: ${resources.dns.host}
+            host: demo.oss.baby
             path: /
             port: 8080
           type: route
@@ -77,7 +77,7 @@ resources:
     id: hello-world.route
     metadata: {}
     params:
-      host: ${resources.dns.host}
+      host: demo.oss.baby
       path: /
       port: 8080
     source_workload: hello-world
