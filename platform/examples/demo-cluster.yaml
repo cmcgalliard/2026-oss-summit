@@ -33,4 +33,4 @@ spec:
     harbor:
       enabled: false
     headlamp:
-      enabled: true
+      enabled: false

@@ -25,7 +25,7 @@ spec:
       enabled:
         - demo-app
     o11yStack:
-      enabled: true
+      enabled: false
       loki: true
       tempo: true
       grafana: true
@@ -33,4 +33,4 @@ spec:
     harbor:
       enabled: false
     headlamp:
-      enabled: true
+      enabled: false
