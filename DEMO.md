@@ -1,5 +1,35 @@
 
 
 ```
-cp platform/examples/demo-cluster.yaml platform/clusters/
+vim platform/examples/demo-cluster.yaml
+vim platform/crd/platformcluster-rgd.yaml
 ```
+
+```
+vim platform/workloads/apps/demo-app/score.yaml
+ls -l platform/workloads/apps/demo-app/rendered/
+```
+
+```
+cp platform/examples/demo-cluster.yaml platform/clusters/
+git add platform/clusters/demo-cluster.yaml
+git commit -m "Add demo PlatformCluster"
+git push origin try-three
+```
+
+Refresh the platform-clusters app
+
+```
+k get platformcluster
+k get linode
+k get cluster.lke.linode.upbound.io
+```
+
+Show the LKE Cluster in the Linode console
+
+Show the argo apps for the demo cluster 
+
+
+1. Managed to expose very rich Kubernetes features via a simple user-experience.
+2. Makes it easy for humans and AI agents to reason about. 
+3. Lowers the cognitive load of maintaining and reviewing cluster and applications.

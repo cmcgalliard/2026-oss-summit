@@ -375,40 +375,6 @@ spec:
                 factor: 2
                 maxDuration: 3m
 
-    - id: gatewayApiCrdsApp
-      includeWhen:
-        - ${schema.spec.components.gatewayFabric.enabled}
-      template:
-        apiVersion: argoproj.io/v1alpha1
-        kind: Application
-        metadata:
-          name: "${schema.spec.clusterSpec.clusterName}-gateway-api-crds"
-          namespace: argocd
-          annotations:
-            platform-cluster/bootstrap-job: "${string(argocdRegisterJob.status.succeeded)}"
-            argocd.argoproj.io/sync-wave: "0"
-          finalizers:
-            - resources-finalizer.argocd.argoproj.io
-          labels:
-            platform-cluster: ${schema.metadata.name}
-            component: platform
-        spec:
-          project: default
-          source:
-            repoURL: https://github.com/kubernetes-sigs/gateway-api.git
-            targetRevision: v1.2.1
-            path: config/crd/standard
-          destination:
-            server: "${lkeCluster.status.atProvider.apiEndpoints[0]}"
-            namespace: nginx-gateway
-          syncPolicy:
-            automated:
-              prune: true
-              selfHeal: true
-            syncOptions:
-              - CreateNamespace=true
-              - ServerSideApply=true
-
     - id: gatewayFabricApp
       includeWhen:
         - ${schema.spec.components.gatewayFabric.enabled}
