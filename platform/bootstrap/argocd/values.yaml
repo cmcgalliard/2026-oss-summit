@@ -1,0 +1,98 @@
+# ArgoCD Helm Values — LKE Platform Engineering Demo
+# Chart: argo/argo-cd v9.4.17
+# Namespace: argocd
+#
+# Bootstrap Install:
+#   helm repo add argo https://argoproj.github.io/argo-helm
+#   helm repo update
+#   kubectl create namespace argocd
+#   helm install argocd argo/argo-cd \
+#     --namespace argocd \
+#     --version 9.4.17 \
+#     --values platform/bootstrap/argocd/values.yaml
+#
+# After install, apply all ArgoCD Applications:
+#   kubectl apply -f platform/apps/
+
+global:
+  domain: "" # Optional: set to your LoadBalancer IP or hostname
+
+configs:
+  secret:
+    # Admin password is NOT set here — ArgoCD auto-generates a random password
+    # and stores it in the 'argocd-initial-admin-secret' Secret in the argocd namespace.
+    # Retrieve it after bootstrap with:
+    #   kubectl get secret argocd-initial-admin-secret -n argocd \
+    #     -o jsonpath='{.data.password}' | base64 -d && echo
+    {}
+
+  params:
+    # Disable TLS for demo (enable in production)
+    server.insecure: "true"
+    # Allow ArgoCD to manage apps in any namespace
+    application.namespaces: "*"
+
+  # Repository credentials are managed via a Kubernetes Secret created by bootstrap.sh.
+  # The secret 'argocd-repo-github' in the argocd namespace is labeled
+  # argocd.argoproj.io/secret-type=repository and contains the GitHub PAT.
+  # Nothing here — credentials must NOT be committed to git.
+  repositories: {}
+
+server:
+  service:
+    type: LoadBalancer
+
+  extraArgs:
+    - --insecure
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+controller:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+repoServer:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+redis:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+applicationSet:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+notifications:
+  enabled: false
+
+dex:
+  enabled: false

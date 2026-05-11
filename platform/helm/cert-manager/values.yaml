@@ -1,0 +1,41 @@
+# cert-manager Helm Values — LKE Platform Engineering Demo
+# Chart: oci://quay.io/jetstack/charts/cert-manager
+# Version: v1.20.1
+# Namespace: cert-manager
+#
+# Managed as ArgoCD Application — see platform/apps/cert-manager.yaml
+
+crds:
+  enabled: true
+  keep: true
+
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+webhook:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+cainjector:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
+
+prometheus:
+  enabled: false

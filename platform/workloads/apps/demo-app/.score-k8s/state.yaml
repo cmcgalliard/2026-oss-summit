@@ -1,0 +1,88 @@
+workloads:
+  hello-world:
+    spec:
+      apiVersion: score.dev/v1b1
+      containers:
+        hello-world:
+          image: scorespec/sample-score-app:latest
+          variables:
+            DB_DATABASE: ${resources.db.name}
+            DB_HOST: ${resources.db.host}
+            DB_PASSWORD: ${resources.db.password}
+            DB_PORT: ${resources.db.port}
+            DB_USER: ${resources.db.username}
+            MESSAGE: Hello, World!
+            PORT: "3000"
+      metadata:
+        annotations:
+          tags: nodejs,http,website,javascript,postgres
+        name: hello-world
+      resources:
+        db:
+          type: postgres
+        dns:
+          type: dns
+        route:
+          params:
+            host: ${resources.dns.host}
+            path: /
+            port: 8080
+          type: route
+      service:
+        ports:
+          www:
+            port: 8080
+            targetPort: 3000
+    file: score.yaml
+    instance_suffix: -9079ee0beb
+resources:
+  dns.default#hello-world.dns:
+    guid: 0075aeb7-56b9-4466-defb-859ca23e0cbd
+    type: dns
+    class: default
+    id: hello-world.dns
+    metadata: {}
+    params: {}
+    source_workload: hello-world
+    provisioner: template://default-provisioners/dns
+    state:
+      instanceHostname: dnskumwsd.oss.baby
+    outputs:
+      host: dnskumwsd.oss.baby
+  postgres.default#hello-world.db:
+    guid: 348c277b-7e34-4d98-87cc-5a29d1108dcd
+    type: postgres
+    class: default
+    id: hello-world.db
+    metadata: {}
+    params: {}
+    source_workload: hello-world
+    provisioner: template://default-provisioners/postgres
+    state:
+      database: db-zHasluCy
+      password: h69jtmC2zxk2NxG2
+      service: pg-hello-world-348c277b
+      username: user-DxiADSNw
+    outputs:
+      database: db-zHasluCy
+      host: pg-hello-world-348c277b
+      name: db-zHasluCy
+      password: "\U0001F510\U0001F4ACpg-hello-world-348c277b_password\U0001F4AC\U0001F510"
+      port: 5432
+      username: user-DxiADSNw
+  route.default#hello-world.route:
+    guid: 6db47f94-c302-4217-9780-538914ca2927
+    type: route
+    class: default
+    id: hello-world.route
+    metadata: {}
+    params:
+      host: ${resources.dns.host}
+      path: /
+      port: 8080
+    source_workload: hello-world
+    provisioner: template://default-provisioners/route
+    state:
+      routeName: route-hello-world-6db47f94
+shared_state: {}
+patching_templates: []
