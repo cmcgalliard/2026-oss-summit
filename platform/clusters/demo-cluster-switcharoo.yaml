@@ -1,15 +1,15 @@
 apiVersion: api.platform.example.com/v1
 kind: PlatformCluster
 metadata:
-  name: demo-cluster
+  name: demo-cluster-switcharoo
   namespace: default
   labels:
     environment: dev
-    team: platform-team
+    team: demo-app-team
     purpose: development
 spec:
   clusterSpec:
-    clusterName: demo-cluster
+    clusterName: demo-cluster-switcharoo
     region: us-east
     kubernetesVersion: "1.35"
     nodePool:
@@ -25,7 +25,7 @@ spec:
       enabled:
         - demo-app
     o11yStack:
-      enabled: true
+      enabled: false
       loki: true
       tempo: true
       grafana: true
@@ -33,4 +33,4 @@ spec:
     harbor:
       enabled: false
     headlamp:
-      enabled: true
+      enabled: false
