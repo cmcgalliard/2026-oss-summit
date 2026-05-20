@@ -4,7 +4,7 @@ workloads:
       apiVersion: score.dev/v1b1
       containers:
         hello-world:
-          image: scorespec/sample-score-app:latest
+          image: julsemaan/oss-baby:latest
           variables:
             DB_DATABASE: ${resources.db.name}
             DB_HOST: ${resources.db.host}

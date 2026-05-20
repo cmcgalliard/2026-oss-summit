@@ -223,7 +223,7 @@ spec:
               value: Hello, World!
             - name: PORT
               value: "3000"
-          image: scorespec/sample-score-app:latest
+          image: julsemaan/oss-baby:latest
           name: hello-world
           resources: {}
 status: {}
