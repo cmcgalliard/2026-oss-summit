@@ -5,7 +5,7 @@ metadata:
     tags: "nodejs,http,website,javascript,postgres"
 containers:
   hello-world:
-    image: scorespec/sample-score-app:latest
+    image: julsemaan/oss-baby:latest
     variables:
       PORT: "3000"
       MESSAGE: "Hello, World!"
