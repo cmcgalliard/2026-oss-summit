@@ -172,7 +172,7 @@ spec:
     - name: www
       port: 8080
       protocol: TCP
-      targetPort: 3000
+      targetPort: 80
   selector:
     app.kubernetes.io/instance: hello-world-83fb804a1c
 status:

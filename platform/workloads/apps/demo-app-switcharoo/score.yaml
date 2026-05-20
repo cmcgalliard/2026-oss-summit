@@ -27,4 +27,4 @@ service:
   ports:
     www:
       port: 8080
-      targetPort: 3000
+      targetPort: 80

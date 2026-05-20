@@ -32,7 +32,7 @@ workloads:
         ports:
           www:
             port: 8080
-            targetPort: 3000
+            targetPort: 80
     file: score.yaml
     instance_suffix: -9079ee0beb
 resources:
